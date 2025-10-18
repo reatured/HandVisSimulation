@@ -1,39 +1,51 @@
-import { useRef, useState, useEffect } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { useState, useCallback } from 'react'
+import HandTrackingCamera from './components/HandTrackingCamera'
+import Scene3D from './components/Scene3D'
+import ModelSelector from './components/ModelSelector'
 
-function Box(props) {
-  // This reference gives us direct access to the THREE.Mesh object
-  const ref = useRef()
-  // Hold state for hovered and clicked events
-  const [hovered, hover] = useState(false)
-  const [clicked, click] = useState(false)
-  // Subscribe this component to the render-loop, rotate the mesh every frame
-  useFrame((state, delta) => (ref.current.rotation.x += delta))
-  // Return the view, these are regular Threejs elements expressed in JSX
-  return (
-    <mesh
-      {...props}
-      ref={ref}
-      scale={clicked ? 1.5 : 1}
-      onClick={(event) => click(!clicked)}
-      onPointerOver={(event) => (event.stopPropagation(), hover(true))}
-      onPointerOut={(event) => hover(false)}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
-    </mesh>
-  )
-}
+// Available hand models configuration
+const HAND_MODELS = [
+  { id: 'ability_left', name: 'Ability Hand (Left)', path: 'ability_hand', side: 'left' },
+  { id: 'ability_right', name: 'Ability Hand (Right)', path: 'ability_hand', side: 'right' },
+  { id: 'shadow_left', name: 'Shadow Hand (Left)', path: 'shadow_hand', side: 'left' },
+  { id: 'shadow_right', name: 'Shadow Hand (Right)', path: 'shadow_hand', side: 'right' },
+  { id: 'allegro_left', name: 'Allegro Hand (Left)', path: 'allegro_hand', side: 'left' },
+  { id: 'allegro_right', name: 'Allegro Hand (Right)', path: 'allegro_hand', side: 'right' },
+  { id: 'inspire_left', name: 'Inspire Hand (Left)', path: 'inspire_hand', side: 'left' },
+  { id: 'inspire_right', name: 'Inspire Hand (Right)', path: 'inspire_hand', side: 'right' },
+  { id: 'leap_left', name: 'Leap Hand (Left)', path: 'leap_hand', side: 'left' },
+  { id: 'leap_right', name: 'Leap Hand (Right)', path: 'leap_hand', side: 'right' },
+  { id: 'schunk_left', name: 'Schunk SVH Hand (Left)', path: 'schunk_hand', side: 'left' },
+  { id: 'schunk_right', name: 'Schunk SVH Hand (Right)', path: 'schunk_hand', side: 'right' },
+  { id: 'barrett', name: 'Barrett Hand', path: 'barrett_hand', side: null },
+  { id: 'dclaw', name: 'DClaw Gripper', path: 'dclaw_gripper', side: null },
+  { id: 'panda', name: 'Panda Gripper', path: 'panda_gripper', side: null },
+]
 
 export default function App() {
+  const [selectedModel, setSelectedModel] = useState('ability_left')
+  const [handTrackingData, setHandTrackingData] = useState(null)
+
+  const currentModel = HAND_MODELS.find(m => m.id === selectedModel)
+
+  const handleHandResults = useCallback((results) => {
+    setHandTrackingData(results)
+  }, [])
+
   return (
-    <Canvas>
-      <ambientLight intensity={Math.PI } />
-      <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
-      <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
-      <Box position={[-1.2, 0, 0]} />
-      <Box position={[1.2, 0, 0]} />
-      <OrbitControls />
-    </Canvas>
+    <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
+      <Scene3D
+        selectedModel={currentModel}
+        handTrackingData={handTrackingData}
+      />
+
+      <HandTrackingCamera onHandResults={handleHandResults} />
+
+      <ModelSelector
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        models={HAND_MODELS}
+      />
+    </div>
   )
 }
