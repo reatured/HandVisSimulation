@@ -2,7 +2,8 @@ import { useLoader } from '@react-three/fiber'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 export default function InspireHand({ side = 'left' }) {
-  const basePath = `/assets/robots/hands/inspire_hand/meshes/visual`
+  const PUBLIC_URL = process.env.PUBLIC_URL || ''
+  const basePath = `${PUBLIC_URL}/assets/robots/hands/inspire_hand/meshes/visual`
   const prefix = side === 'left' ? 'left' : 'right'
 
   const baseLink = useLoader(GLTFLoader, `${basePath}/${prefix}_base_link.glb`)
