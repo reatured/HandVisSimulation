@@ -14,8 +14,7 @@ export default function AbilityHand({ side = 'left', jointRotations = {} }) {
   const ringPip = jointRotations.ring_pip || 0
   const pinkyMcp = jointRotations.pinky_mcp || 0
   const pinkyPip = jointRotations.pinky_pip || 0
-  const PUBLIC_URL = process.env.PUBLIC_URL || ''
-  const basePath = `${PUBLIC_URL}/assets/robots/hands/ability_hand/meshes/visual`
+  const basePath = `/assets/robots/hands/ability_hand/meshes/visual`
 
   const wrist = useLoader(GLTFLoader, `${basePath}/wristmesh.glb`)
   const palm = useLoader(GLTFLoader, side === 'left' ? `${basePath}/FB_palm_ref.glb` : `${basePath}/FB_palm_ref_MIR.glb`)
