@@ -13,7 +13,7 @@ export default function InspireHand({ side = 'left' }) {
   const indexIntermediate = useLoader(GLTFLoader, `${basePath}/${prefix}_index_intermediate.glb`)
 
   return (
-    <group scale={[50, 50, 50]}>
+    <group scale={[1, 1, 1]}>
       <primitive object={baseLink.scene.clone()} />
       <group position={[0.01, 0.01, 0.01]}>
         <primitive object={thumbProximal.scene.clone()} />

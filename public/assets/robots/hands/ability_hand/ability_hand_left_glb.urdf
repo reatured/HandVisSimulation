@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <robot name="ability_hand">
   <link name="base_link"/>
   <joint name="base_joint" type="fixed">

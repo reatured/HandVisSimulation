@@ -1,0 +1,192 @@
+import { useEffect, useState, useRef } from 'react'
+import { useLoader, useFrame } from '@react-three/fiber'
+import URDFLoader from 'urdf-loader'
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { getURDFPath } from '../utils/urdfConfig'
+import { mapUIJointToURDF, clampJointValue } from '../utils/urdfJointMapping'
+
+/**
+ * URDFHandModel Component
+ * Loads and displays URDF hand models with optional joint control
+ */
+export default function URDFHandModel({
+  modelPath,
+  side = 'left',
+  jointRotations = {},
+  position = [0, 0, 0]
+}) {
+  const [robot, setRobot] = useState(null)
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const groupRef = useRef()
+
+  // Load URDF model
+  useEffect(() => {
+    const urdfPath = getURDFPath(modelPath, side)
+
+    if (!urdfPath) {
+      setError(`No URDF found for ${modelPath} (${side})`)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    const loader = new URDFLoader()
+
+    // Set up loading manager for better error handling
+    const manager = new THREE.LoadingManager()
+    manager.onError = (url) => {
+      console.error('Error loading:', url)
+      setError(`Failed to load: ${url}`)
+    }
+
+    loader.manager = manager
+
+    // Register the GLTF loader for loading GLB files
+    // Using loadMeshCb as documented in urdf-loader
+    const gltfLoader = new GLTFLoader(manager)
+    loader.loadMeshCb = (path, manager, onComplete) => {
+      gltfLoader.load(
+        path,
+        (result) => {
+          onComplete(result.scene)
+        },
+        undefined,
+        (err) => {
+          console.error('Error loading mesh:', path, err)
+          onComplete(null, err)
+        }
+      )
+    }
+
+    // Set the working path for resolving relative mesh paths
+    // Extract the directory from the URDF path
+    const urdfDir = urdfPath.substring(0, urdfPath.lastIndexOf('/'))
+    loader.workingPath = urdfDir + '/'
+
+    console.log(`Loading URDF from: ${urdfPath}`)
+    console.log(`Working path set to: ${urdfDir}/`)
+
+    // Load the URDF file
+    loader.load(
+      urdfPath,
+      (loadedRobot) => {
+        console.log('URDF loaded successfully:', urdfPath)
+        console.log('Robot joints:', Object.keys(loadedRobot.joints))
+
+        // Apply default rotation and scale adjustments if needed
+        loadedRobot.rotation.set(0, 0, 0)
+        loadedRobot.position.set(0, 0, 0)
+
+        setRobot(loadedRobot)
+        setLoading(false)
+      },
+      (progress) => {
+        // Optional: track loading progress
+        // Progress can be null or undefined in some cases
+        if (progress && progress.lengthComputable) {
+          const percent = (progress.loaded / progress.total) * 100
+          console.log(`Loading ${urdfPath}: ${percent.toFixed(2)}%`)
+        }
+      },
+      (err) => {
+        console.error('Failed to load URDF:', err)
+        setError(`Failed to load URDF: ${err.message || 'Unknown error'}`)
+        setLoading(false)
+      }
+    )
+
+    // Cleanup
+    return () => {
+      if (robot) {
+        robot.traverse((child) => {
+          if (child.geometry) child.geometry.dispose()
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(m => m.dispose())
+            } else {
+              child.material.dispose()
+            }
+          }
+        })
+      }
+    }
+  }, [modelPath, side])
+
+  // Apply joint rotations when they change
+  useEffect(() => {
+    if (!robot || Object.keys(jointRotations).length === 0) return
+
+    // Apply each joint rotation
+    Object.entries(jointRotations).forEach(([uiJointName, angle]) => {
+      // Map UI joint name to URDF joint name
+      const urdfJointName = mapUIJointToURDF(uiJointName, modelPath)
+
+      if (!urdfJointName) {
+        // Skip if no mapping exists
+        return
+      }
+
+      // Check if the joint exists in the robot
+      const joint = robot.joints[urdfJointName]
+      if (!joint) {
+        console.warn(`Joint not found in robot: ${urdfJointName} (UI: ${uiJointName})`)
+        return
+      }
+
+      // Clamp the angle to joint limits
+      const clampedAngle = clampJointValue(angle, urdfJointName, modelPath)
+
+      // Log if value was clamped (for debugging)
+      if (clampedAngle !== angle) {
+        console.log(`Joint ${urdfJointName}: clamped ${angle.toFixed(3)} to ${clampedAngle.toFixed(3)}`)
+      }
+
+      // Apply the rotation
+      try {
+        joint.setJointValue(clampedAngle)
+      } catch (error) {
+        console.error(`Error setting joint value for ${urdfJointName}:`, error)
+      }
+    })
+  }, [robot, jointRotations, modelPath])
+
+  // Render loading state
+  if (loading) {
+    return (
+      <group position={position}>
+        <mesh>
+          <boxGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color="gray" opacity={0.5} transparent />
+        </mesh>
+      </group>
+    )
+  }
+
+  // Render error state
+  if (error) {
+    console.error('URDFHandModel error:', error)
+    return (
+      <group position={position}>
+        <mesh>
+          <boxGeometry args={[0.2, 0.2, 0.2]} />
+          <meshStandardMaterial color="red" opacity={0.5} transparent />
+        </mesh>
+      </group>
+    )
+  }
+
+  // Render loaded robot
+  if (robot) {
+    return (
+      <group ref={groupRef} position={position}>
+        <primitive object={robot} />
+      </group>
+    )
+  }
+
+  return null
+}

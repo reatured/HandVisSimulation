@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for dir in public/assets/robots/hands/*/)",
+      "Bash(ls \"$dir\"*.urdf)",
+      "Bash(done)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
