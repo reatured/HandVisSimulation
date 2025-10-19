@@ -3,12 +3,12 @@ import { Text } from '@react-three/drei'
 import AbilityHand from '../models/AbilityHand'
 import InspireHand from '../models/InspireHand'
 
-function HandModelInner({ position = [0, 0, 0], modelPath = 'ability_hand', side = 'left' }) {
+function HandModelInner({ position = [0, 0, 0], modelPath = 'ability_hand', side = 'left', jointRotations = {} }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
     switch (modelPath) {
       case 'ability_hand':
-        return <AbilityHand side={side} />
+        return <AbilityHand side={side} jointRotations={jointRotations} />
       case 'inspire_hand':
         return <InspireHand side={side} />
       case 'shadow_hand':

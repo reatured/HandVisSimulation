@@ -2,7 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import HandModel from './HandModel'
 
-export default function Scene3D({ selectedModel, handTrackingData }) {
+export default function Scene3D({ selectedModel, handTrackingData, jointRotations = {} }) {
   return (
     <Canvas
       camera={{ position: [0.5, 0.5, 1], fov: 50 }}
@@ -19,6 +19,7 @@ export default function Scene3D({ selectedModel, handTrackingData }) {
         modelPath={selectedModel.path}
         side={selectedModel.side}
         handTrackingData={handTrackingData}
+        jointRotations={jointRotations}
       />
 
       <OrbitControls />

@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import HandTrackingCamera from './components/HandTrackingCamera'
 import Scene3D from './components/Scene3D'
-import ModelSelector from './components/ModelSelector'
+import ControlPanel from './components/ControlPanel'
+import DebugPanel from './components/DebugPanel'
 
 // Available hand models configuration
 const HAND_MODELS = [
@@ -22,11 +23,38 @@ const HAND_MODELS = [
   { id: 'panda', name: 'Panda Gripper', path: 'panda_gripper', side: null },
 ]
 
+// Initialize joint rotations for all 21 joints
+const createInitialJointRotations = () => {
+  const joints = {}
+  const fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+  const segments = ['mcp', 'pip', 'dip', 'tip']
+
+  joints.wrist = 0
+  fingers.forEach(finger => {
+    segments.forEach(segment => {
+      joints[`${finger}_${segment}`] = 0
+    })
+  })
+  return joints
+}
+
 export default function App() {
   const [selectedModel, setSelectedModel] = useState('ability_left')
   const [handTrackingData, setHandTrackingData] = useState(null)
+  const [jointRotations, setJointRotations] = useState(createInitialJointRotations())
+  const [selectedJoint, setSelectedJoint] = useState('wrist')
 
-  const currentModel = HAND_MODELS.find(m => m.id === selectedModel)
+  const currentModel = useMemo(() =>
+    HAND_MODELS.find(m => m.id === selectedModel),
+    [selectedModel]
+  )
+
+  const handleJointRotationChange = useCallback((rotation) => {
+    setJointRotations(prev => ({
+      ...prev,
+      [selectedJoint]: rotation
+    }))
+  }, [selectedJoint])
 
   const handleHandResults = useCallback((results) => {
     setHandTrackingData(results)
@@ -37,15 +65,22 @@ export default function App() {
       <Scene3D
         selectedModel={currentModel}
         handTrackingData={handTrackingData}
+        jointRotations={jointRotations}
       />
 
       <HandTrackingCamera onHandResults={handleHandResults} />
 
-      <ModelSelector
+      <ControlPanel
+        jointRotations={jointRotations}
+        selectedJoint={selectedJoint}
+        onSelectedJointChange={setSelectedJoint}
+        onJointRotationChange={handleJointRotationChange}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
         models={HAND_MODELS}
       />
+
+      <DebugPanel handTrackingData={handTrackingData} />
     </div>
   )
 }
