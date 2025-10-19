@@ -14,7 +14,9 @@ export default function URDFHandModel({
   modelPath,
   side = 'left',
   jointRotations = {},
-  position = [0, 0, 0]
+  position = [0, 0, 0],
+  gimbalRotation = { x: 0, y: 0, z: 0 },
+  cameraPosition = null
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -118,19 +120,44 @@ export default function URDFHandModel({
 
   // Apply joint rotations when they change
   useEffect(() => {
-    if (!robot) return
+    if (!robot || !groupRef.current) return
 
     // Handle both old format (flat object) and new format (with joints and wristOrientation)
     const joints = jointRotations.joints || jointRotations
     const wristOrientation = jointRotations.wristOrientation || null
 
-    // Apply wrist orientation if available
-    if (wristOrientation && groupRef.current) {
-      groupRef.current.rotation.set(
-        wristOrientation.x,
-        wristOrientation.y,
-        wristOrientation.z
+    // Calculate final rotation: combine wrist orientation from camera + gimbal offset
+    let finalRotation = { x: 0, y: 0, z: 0 }
+
+    if (wristOrientation) {
+      // Combine camera wrist orientation with gimbal rotation offset
+      finalRotation = {
+        x: wristOrientation.x + gimbalRotation.x,
+        y: wristOrientation.y + gimbalRotation.y,
+        z: wristOrientation.z + gimbalRotation.z
+      }
+    } else {
+      // No camera data, just use gimbal rotation
+      finalRotation = gimbalRotation
+    }
+
+    // Apply combined rotation to the group
+    groupRef.current.rotation.set(
+      finalRotation.x,
+      finalRotation.y,
+      finalRotation.z
+    )
+
+    // Apply position offset from camera if available
+    if (cameraPosition) {
+      groupRef.current.position.set(
+        position[0] + cameraPosition.x,
+        position[1] + cameraPosition.y,
+        position[2] + cameraPosition.z
       )
+    } else {
+      // Reset to default position
+      groupRef.current.position.set(position[0], position[1], position[2])
     }
 
     // Apply each joint rotation
@@ -162,7 +189,7 @@ export default function URDFHandModel({
         }
       })
     }
-  }, [robot, jointRotations, modelPath])
+  }, [robot, jointRotations, modelPath, gimbalRotation, cameraPosition, position])
 
   // Render loading state
   if (loading) {

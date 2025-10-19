@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import HandTrackingCamera from './components/HandTrackingCamera'
 import Scene3D from './components/Scene3D'
 import ControlPanel from './components/ControlPanel'
-import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
 
 // Detect if user is on mobile device
@@ -65,15 +64,31 @@ export default function App() {
     right: {}
   })
 
+  // Hand positions from camera tracking
+  const [cameraHandPositions, setCameraHandPositions] = useState({
+    left: null,
+    right: null
+  })
+
+  // Gimbal rotation offsets for each hand
+  const [leftHandGimbal, setLeftHandGimbal] = useState({ x: 0, y: 0, z: 0 })
+  const [rightHandGimbal, setRightHandGimbal] = useState({ x: 0, y: 0, z: 0 })
+
+  // Gimbal visibility toggle
+  const [showGimbals, setShowGimbals] = useState(true)
+
+  // Camera position tracking toggle (default: disabled)
+  const [enableCameraPosition, setEnableCameraPosition] = useState(false)
+
   const [selectedJoint, setSelectedJoint] = useState('wrist')
   const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
   const [controlMode, setControlMode] = useState('camera') // 'manual' or 'camera' - default to camera
   const [calibrationStatus, setCalibrationStatus] = useState({ isCalibrated: false })
 
-  // Panel visibility states - camera preview always visible, control/debug only on desktop
+  // Panel visibility states - camera preview always visible, control panel only on desktop, debug disabled
   const [showCameraPreview, setShowCameraPreview] = useState(true)
   const [showControlPanel, setShowControlPanel] = useState(!isMobile)
-  const [showDebugPanel, setShowDebugPanel] = useState(!isMobile)
+  const [showDebugPanel] = useState(false) // Debug panel disabled
 
   // Initialize calibration manager (persistent across renders)
   const calibrationManagerRef = useRef(new CalibrationManager())
@@ -126,6 +141,10 @@ export default function App() {
     setCameraJointRotations(rotations)
   }, [])
 
+  const handleCameraHandPositions = useCallback((positions) => {
+    setCameraHandPositions(positions)
+  }, [])
+
   const handleControlModeChange = useCallback((mode) => {
     setControlMode(mode)
   }, [])
@@ -153,11 +172,20 @@ export default function App() {
         handTrackingData={handTrackingData}
         leftJointRotations={activeJointRotations.left}
         rightJointRotations={activeJointRotations.right}
+        leftHandPosition={controlMode === 'camera' ? cameraHandPositions.left : null}
+        rightHandPosition={controlMode === 'camera' ? cameraHandPositions.right : null}
+        leftHandGimbal={leftHandGimbal}
+        rightHandGimbal={rightHandGimbal}
+        onLeftGimbalChange={setLeftHandGimbal}
+        onRightGimbalChange={setRightHandGimbal}
+        showGimbals={showGimbals}
+        enableCameraPosition={enableCameraPosition}
       />
 
       <HandTrackingCamera
         onHandResults={handleHandResults}
         onJointRotations={handleCameraJointRotations}
+        onHandPositions={handleCameraHandPositions}
         calibrationManager={calibrationManagerRef.current}
         showPreview={showCameraPreview}
       />
@@ -179,11 +207,11 @@ export default function App() {
           onControlModeChange={handleControlModeChange}
           onCalibrate={handleCalibrate}
           calibrationStatus={calibrationStatus}
+          showGimbals={showGimbals}
+          onShowGimbalsChange={setShowGimbals}
+          enableCameraPosition={enableCameraPosition}
+          onEnableCameraPositionChange={setEnableCameraPosition}
         />
-      )}
-
-      {showDebugPanel && (
-        <DebugPanel handTrackingData={handTrackingData} />
       )}
 
       {/* Mobile camera toggle button */}
@@ -209,34 +237,6 @@ export default function App() {
             }}
           >
             {showCameraPreview ? '📹 Hide' : '📹 Show'} Camera
-          </button>
-        </div>
-      )}
-
-      {/* Desktop debug panel toggle button */}
-      {!isMobile && (
-        <div style={{
-          position: 'absolute',
-          bottom: 20,
-          left: 20,
-          zIndex: 30
-        }}>
-          <button
-            onClick={() => setShowDebugPanel(!showDebugPanel)}
-            style={{
-              padding: '10px 14px',
-              fontSize: '13px',
-              backgroundColor: showDebugPanel ? 'rgba(0, 255, 0, 0.8)' : 'rgba(60, 60, 60, 0.8)',
-              color: 'white',
-              border: showDebugPanel ? '2px solid #00ff00' : '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              whiteSpace: 'nowrap',
-              fontFamily: 'monospace'
-            }}
-          >
-            {showDebugPanel ? '🐛 Hide' : '🐛 Show'} Debug
           </button>
         </div>
       )}

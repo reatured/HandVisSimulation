@@ -90,7 +90,11 @@ export default function ControlPanel({
   controlMode,
   onControlModeChange,
   onCalibrate,
-  calibrationStatus
+  calibrationStatus,
+  showGimbals,
+  onShowGimbalsChange,
+  enableCameraPosition,
+  onEnableCameraPositionChange
 }) {
   // Get model path for the currently selected hand to determine joint availability
   const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
@@ -523,6 +527,90 @@ export default function ControlPanel({
           <span>0</span>
           <span>1.5</span>
         </div>
+        </div>
+      )}
+
+      {/* Gimbal Toggle - Always visible */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          3D Gimbal Controls
+        </label>
+        <button
+          onClick={() => onShowGimbalsChange(!showGimbals)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            backgroundColor: showGimbals
+              ? 'rgba(100, 200, 100, 0.9)'
+              : 'rgba(255, 100, 100, 0.9)',
+            color: 'white',
+            border: showGimbals ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}
+        >
+          {showGimbals ? '✓ Gimbals Visible' : '✗ Gimbals Hidden'}
+        </button>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginTop: '6px',
+          lineHeight: '1.3'
+        }}>
+          Drag the 3D rotation handles in the scene to adjust hand orientation offset
+        </div>
+      </div>
+
+      {/* Camera Position Tracking Toggle - Only in camera mode */}
+      {isCameraMode && (
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{
+            color: 'white',
+            fontSize: '14px',
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            Hand Position Tracking
+          </label>
+          <button
+            onClick={() => onEnableCameraPositionChange(!enableCameraPosition)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '14px',
+              backgroundColor: enableCameraPosition
+                ? 'rgba(100, 200, 100, 0.9)'
+                : 'rgba(255, 100, 100, 0.9)',
+              color: 'white',
+              border: enableCameraPosition ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontWeight: 'bold',
+              textTransform: 'uppercase'
+            }}
+          >
+            {enableCameraPosition ? '✓ Position Enabled' : '✗ Position Disabled'}
+          </button>
+          <div style={{
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '11px',
+            marginTop: '6px',
+            lineHeight: '1.3'
+          }}>
+            When enabled, hand models move in 3D space following your real hand position
+          </div>
         </div>
       )}
 

@@ -5,11 +5,12 @@ import { landmarksToJointRotations } from '../utils/handKinematics'
 import { MotionFilter } from '../utils/motionFilter'
 import { CalibrationManager } from '../utils/coordinateMapping'
 
-export default function HandTrackingCamera({ onHandResults, onJointRotations, calibrationManager, showPreview = true }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
   const onJointRotationsRef = useRef(onJointRotations)
+  const onHandPositionsRef = useRef(onHandPositions)
 
   // Initialize motion filter (persistent across renders)
   const motionFilterRef = useRef(new MotionFilter({
@@ -28,6 +29,10 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
   useEffect(() => {
     onJointRotationsRef.current = onJointRotations
   }, [onJointRotations])
+
+  useEffect(() => {
+    onHandPositionsRef.current = onHandPositions
+  }, [onHandPositions])
 
   useEffect(() => {
     let hands = null
@@ -94,9 +99,10 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
         onHandResultsRef.current(results)
       }
 
-      // Process landmarks to joint rotations
+      // Process landmarks to joint rotations and positions
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const handRotations = { left: null, right: null }
+        const handPositions = { left: null, right: null }
 
         // Process each detected hand
         results.multiHandLandmarks.forEach((landmarks, index) => {
@@ -106,6 +112,18 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
 
           // Convert landmarks to joint rotations
           let rotations = landmarksToJointRotations(landmarks, handedness)
+
+          // Extract wrist position (landmark 0 is always the wrist)
+          const wristLandmark = landmarks[0]
+          // Convert MediaPipe coordinates to Three.js space
+          // MediaPipe: x right, y down, z toward camera (negative = away)
+          // Three.js: x right, y up, z toward viewer (positive = toward)
+          // Scale and center the position
+          const position = {
+            x: (wristLandmark.x - 0.5) * 2,  // Center around 0, scale to -1 to 1
+            y: -(wristLandmark.y - 0.5) * 2, // Invert Y and center
+            z: -wristLandmark.z * 2           // Invert Z and scale
+          }
 
           // Create hand prefix for filter (lowercase for consistency)
           const handPrefix = handedness === 'Left' ? 'left' : 'right'
@@ -118,11 +136,13 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
             rotations = calibrationManager.applyCalibration(rotations)
           }
 
-          // Store rotations by hand side
+          // Store rotations and positions by hand side
           if (handedness === 'Left') {
             handRotations.left = rotations
+            handPositions.left = position
           } else {
             handRotations.right = rotations
+            handPositions.right = position
           }
         })
 
@@ -130,10 +150,18 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
         if (onJointRotationsRef.current) {
           onJointRotationsRef.current(handRotations)
         }
+
+        // Send positions to parent component
+        if (onHandPositionsRef.current) {
+          onHandPositionsRef.current(handPositions)
+        }
       } else {
         // No hands detected - send null for both
         if (onJointRotationsRef.current) {
           onJointRotationsRef.current({ left: null, right: null })
+        }
+        if (onHandPositionsRef.current) {
+          onHandPositionsRef.current({ left: null, right: null })
         }
       }
     }

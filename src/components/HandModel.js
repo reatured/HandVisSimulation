@@ -5,7 +5,14 @@ import InspireHand from '../models/InspireHand'
 import URDFHandModel from './URDFHandModel'
 import { hasURDFSupport } from '../utils/urdfConfig'
 
-function HandModelInner({ position = [0, 0, 0], modelPath = 'ability_hand', side = 'left', jointRotations = {} }) {
+function HandModelInner({
+  position = [0, 0, 0],
+  modelPath = 'ability_hand',
+  side = 'left',
+  jointRotations = {},
+  gimbalRotation = { x: 0, y: 0, z: 0 },
+  cameraPosition = null
+}) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
     switch (modelPath) {
@@ -18,6 +25,8 @@ function HandModelInner({ position = [0, 0, 0], modelPath = 'ability_hand', side
               side={side}
               jointRotations={jointRotations}
               position={[0, 0, 0]}
+              gimbalRotation={gimbalRotation}
+              cameraPosition={cameraPosition}
             />
           )
         }
@@ -43,6 +52,8 @@ function HandModelInner({ position = [0, 0, 0], modelPath = 'ability_hand', side
               side={side}
               jointRotations={jointRotations}
               position={[0, 0, 0]}
+              gimbalRotation={gimbalRotation}
+              cameraPosition={cameraPosition}
             />
           )
         }

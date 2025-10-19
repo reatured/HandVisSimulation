@@ -1,17 +1,34 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid, Environment } from '@react-three/drei'
+import { useRef } from 'react'
 import HandModel from './HandModel'
+import GimbalControl from './GimbalControl'
 
 export default function Scene3D({
   leftModel,
   rightModel,
   handTrackingData,
   leftJointRotations,
-  rightJointRotations
+  rightJointRotations,
+  leftHandPosition,
+  rightHandPosition,
+  leftHandGimbal,
+  rightHandGimbal,
+  onLeftGimbalChange,
+  onRightGimbalChange,
+  showGimbals,
+  enableCameraPosition
 }) {
+  // Ref for OrbitControls to pass to gimbals
+  const orbitControlsRef = useRef()
+
   // Ensure we always have valid objects for joint rotations
   const safeLeftRotations = leftJointRotations || {}
   const safeRightRotations = rightJointRotations || {}
+
+  // Default gimbal values
+  const safeLeftGimbal = leftHandGimbal || { x: 0, y: 0, z: 0 }
+  const safeRightGimbal = rightHandGimbal || { x: 0, y: 0, z: 0 }
   return (
     <Canvas
       camera={{ position: [0.5, 0.5, 1], fov: 50 }}
@@ -54,31 +71,55 @@ export default function Scene3D({
         followCamera={false}
       />
 
-      {/* Left Hand Model */}
+      {/* Left Hand Model with Gimbal Control */}
       {leftModel && (
-        <HandModel
-          key={`left-${leftModel.id}`}
-          position={[-0.3, 0, 0]}
-          modelPath={leftModel.path}
-          side={leftModel.side}
-          handTrackingData={handTrackingData}
-          jointRotations={safeLeftRotations}
-        />
+        <group position={[-0.3, 0, 0]}>
+          <GimbalControl
+            position={[0, 0, 0]}
+            rotation={safeLeftGimbal}
+            onRotationChange={onLeftGimbalChange}
+            visible={showGimbals}
+            orbitControlsRef={orbitControlsRef}
+          >
+            <HandModel
+              key={`left-${leftModel.id}`}
+              position={[0, 0, 0]}
+              modelPath={leftModel.path}
+              side={leftModel.side}
+              handTrackingData={handTrackingData}
+              jointRotations={safeLeftRotations}
+              gimbalRotation={safeLeftGimbal}
+              cameraPosition={enableCameraPosition ? leftHandPosition : null}
+            />
+          </GimbalControl>
+        </group>
       )}
 
-      {/* Right Hand Model */}
+      {/* Right Hand Model with Gimbal Control */}
       {rightModel && (
-        <HandModel
-          key={`right-${rightModel.id}`}
-          position={[0.3, 0, 0]}
-          modelPath={rightModel.path}
-          side={rightModel.side}
-          handTrackingData={handTrackingData}
-          jointRotations={safeRightRotations}
-        />
+        <group position={[0.3, 0, 0]}>
+          <GimbalControl
+            position={[0, 0, 0]}
+            rotation={safeRightGimbal}
+            onRotationChange={onRightGimbalChange}
+            visible={showGimbals}
+            orbitControlsRef={orbitControlsRef}
+          >
+            <HandModel
+              key={`right-${rightModel.id}`}
+              position={[0, 0, 0]}
+              modelPath={rightModel.path}
+              side={rightModel.side}
+              handTrackingData={handTrackingData}
+              jointRotations={safeRightRotations}
+              gimbalRotation={safeRightGimbal}
+              cameraPosition={enableCameraPosition ? rightHandPosition : null}
+            />
+          </GimbalControl>
+        </group>
       )}
 
-      <OrbitControls />
+      <OrbitControls ref={orbitControlsRef} makeDefault />
     </Canvas>
   )
 }
