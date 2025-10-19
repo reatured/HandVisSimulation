@@ -80,20 +80,27 @@ export default function ControlPanel({
   selectedJoint,
   onSelectedJointChange,
   onJointRotationChange,
-  selectedModel,
-  onModelChange,
+  selectedHand,
+  onSelectedHandChange,
+  selectedLeftModel,
+  selectedRightModel,
+  onLeftModelChange,
+  onRightModelChange,
   models,
   controlMode,
   onControlModeChange,
   onCalibrate,
   calibrationStatus
 }) {
-  // Get model path to determine joint availability
-  const currentModelData = models.find(m => m.id === selectedModel)
+  // Get model path for the currently selected hand to determine joint availability
+  const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
+  const currentModelData = models.find(m => m.id === currentModelId)
   const modelPath = currentModelData?.path || 'default'
   const jointAvailability = MODEL_JOINT_AVAILABILITY[modelPath] || MODEL_JOINT_AVAILABILITY.default
 
-  const currentRotation = jointRotations[selectedJoint] || 0
+  // Get current rotation for the selected hand and joint
+  const currentHandRotations = jointRotations[selectedHand] || {}
+  const currentRotation = currentHandRotations[selectedJoint] || 0
   const isManualMode = controlMode === 'manual'
   const isCameraMode = controlMode === 'camera'
 
@@ -257,7 +264,7 @@ export default function ControlPanel({
         </div>
       )}
 
-      {/* Model Selector */}
+      {/* Model Selector - Dual Hands */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{
           color: 'white',
@@ -266,32 +273,132 @@ export default function ControlPanel({
           marginBottom: '8px',
           fontWeight: '500'
         }}>
-          Select Hand Model
+          Select Hand Models
         </label>
-        <select
-          value={selectedModel}
-          onChange={(e) => onModelChange(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '10px',
-            fontSize: '14px',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '6px',
-            cursor: 'pointer'
-          }}
-        >
-          {models.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.name}
-            </option>
-          ))}
-        </select>
+
+        {/* Left Hand Model */}
+        <div style={{ marginBottom: '10px' }}>
+          <label style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            display: 'block',
+            marginBottom: '4px'
+          }}>
+            Left Hand
+          </label>
+          <select
+            value={selectedLeftModel}
+            onChange={(e) => onLeftModelChange(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              fontSize: '13px',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            {models.filter(m => m.side === 'left' || m.side === null).map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Right Hand Model */}
+        <div>
+          <label style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            display: 'block',
+            marginBottom: '4px'
+          }}>
+            Right Hand
+          </label>
+          <select
+            value={selectedRightModel}
+            onChange={(e) => onRightModelChange(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '8px',
+              fontSize: '13px',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            {models.filter(m => m.side === 'right' || m.side === null).map((model) => (
+              <option key={model.id} value={model.id}>
+                {model.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Joint Selector - Only in manual mode */}
       {isManualMode && (
         <div style={{ marginBottom: '20px' }}>
+          {/* Hand Selector (Left/Right) */}
+          <div style={{ marginBottom: '15px' }}>
+            <label style={{
+              color: 'white',
+              fontSize: '14px',
+              display: 'block',
+              marginBottom: '8px',
+              fontWeight: '500'
+            }}>
+              Control Which Hand
+            </label>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: '10px'
+            }}>
+              <button
+                onClick={() => onSelectedHandChange('left')}
+                style={{
+                  padding: '10px',
+                  fontSize: '13px',
+                  backgroundColor: selectedHand === 'left'
+                    ? 'rgba(255, 150, 100, 0.9)'
+                    : 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  border: selectedHand === 'left' ? '2px solid rgba(255, 200, 150, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: selectedHand === 'left' ? 'bold' : '500',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Left Hand
+              </button>
+              <button
+                onClick={() => onSelectedHandChange('right')}
+                style={{
+                  padding: '10px',
+                  fontSize: '13px',
+                  backgroundColor: selectedHand === 'right'
+                    ? 'rgba(100, 150, 255, 0.9)'
+                    : 'rgba(255, 255, 255, 0.15)',
+                  color: 'white',
+                  border: selectedHand === 'right' ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: selectedHand === 'right' ? 'bold' : '500',
+                  textTransform: 'uppercase'
+                }}
+              >
+                Right Hand
+              </button>
+            </div>
+          </div>
+
           <label style={{
             color: 'white',
             fontSize: '14px',

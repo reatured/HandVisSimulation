@@ -2,7 +2,16 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Grid, Environment } from '@react-three/drei'
 import HandModel from './HandModel'
 
-export default function Scene3D({ selectedModel, handTrackingData, jointRotations = {} }) {
+export default function Scene3D({
+  leftModel,
+  rightModel,
+  handTrackingData,
+  leftJointRotations,
+  rightJointRotations
+}) {
+  // Ensure we always have valid objects for joint rotations
+  const safeLeftRotations = leftJointRotations || {}
+  const safeRightRotations = rightJointRotations || {}
   return (
     <Canvas
       camera={{ position: [0.5, 0.5, 1], fov: 50 }}
@@ -45,14 +54,29 @@ export default function Scene3D({ selectedModel, handTrackingData, jointRotation
         followCamera={false}
       />
 
-      <HandModel
-        key={selectedModel.id}
-        position={[0, 0, 0]}
-        modelPath={selectedModel.path}
-        side={selectedModel.side}
-        handTrackingData={handTrackingData}
-        jointRotations={jointRotations}
-      />
+      {/* Left Hand Model */}
+      {leftModel && (
+        <HandModel
+          key={`left-${leftModel.id}`}
+          position={[-0.3, 0, 0]}
+          modelPath={leftModel.path}
+          side={leftModel.side}
+          handTrackingData={handTrackingData}
+          jointRotations={safeLeftRotations}
+        />
+      )}
+
+      {/* Right Hand Model */}
+      {rightModel && (
+        <HandModel
+          key={`right-${rightModel.id}`}
+          position={[0.3, 0, 0]}
+          modelPath={rightModel.path}
+          side={rightModel.side}
+          handTrackingData={handTrackingData}
+          jointRotations={safeRightRotations}
+        />
+      )}
 
       <OrbitControls />
     </Canvas>

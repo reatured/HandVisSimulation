@@ -5,7 +5,7 @@ import { landmarksToJointRotations } from '../utils/handKinematics'
 import { MotionFilter } from '../utils/motionFilter'
 import { CalibrationManager } from '../utils/coordinateMapping'
 
-export default function HandTrackingCamera({ onHandResults, onJointRotations, calibrationManager }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, calibrationManager, showPreview = true }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
@@ -96,24 +96,41 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
 
       // Process landmarks to joint rotations
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        // Get first detected hand
-        const landmarks = results.multiHandLandmarks[0]
-        const handedness = results.multiHandedness?.[0]?.label || 'Right'
+        const handRotations = { left: null, right: null }
 
-        // Convert landmarks to joint rotations
-        let rotations = landmarksToJointRotations(landmarks, handedness)
+        // Process each detected hand
+        results.multiHandLandmarks.forEach((landmarks, index) => {
+          const handedness = results.multiHandedness?.[index]?.label || 'Right'
 
-        // Apply motion filtering
-        rotations = motionFilterRef.current.filter(rotations, Date.now())
+          console.log(`Processing hand ${index}: ${handedness}`)
 
-        // Apply calibration if available
-        if (calibrationManager) {
-          rotations = calibrationManager.applyCalibration(rotations)
-        }
+          // Convert landmarks to joint rotations
+          let rotations = landmarksToJointRotations(landmarks, handedness)
+
+          // Apply motion filtering
+          rotations = motionFilterRef.current.filter(rotations, Date.now())
+
+          // Apply calibration if available
+          if (calibrationManager) {
+            rotations = calibrationManager.applyCalibration(rotations)
+          }
+
+          // Store rotations by hand side
+          if (handedness === 'Left') {
+            handRotations.left = rotations
+          } else {
+            handRotations.right = rotations
+          }
+        })
 
         // Send rotations to parent component
         if (onJointRotationsRef.current) {
-          onJointRotationsRef.current(rotations)
+          onJointRotationsRef.current(handRotations)
+        }
+      } else {
+        // No hands detected - send null for both
+        if (onJointRotationsRef.current) {
+          onJointRotationsRef.current({ left: null, right: null })
         }
       }
     }
@@ -162,6 +179,25 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
       }
     }
   }, []) // Empty dependency array - only initialize once
+
+  // Don't render preview if showPreview is false, but keep processing
+  if (!showPreview) {
+    return (
+      <>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ display: 'none' }}
+        />
+        <canvas
+          ref={canvasRef}
+          style={{ display: 'none' }}
+        />
+      </>
+    )
+  }
 
   return (
     <div style={{

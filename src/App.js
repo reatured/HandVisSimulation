@@ -5,6 +5,12 @@ import ControlPanel from './components/ControlPanel'
 import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
 
+// Detect if user is on mobile device
+const isMobileDevice = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768)
+}
+
 // Available hand models configuration
 const HAND_MODELS = [
   { id: 'ability_left', name: 'Ability Hand (Left)', path: 'ability_hand', side: 'left' },
@@ -40,13 +46,34 @@ const createInitialJointRotations = () => {
 }
 
 export default function App() {
-  const [selectedModel, setSelectedModel] = useState('ability_left')
+  // Detect if mobile and set initial panel visibility
+  const isMobile = useMemo(() => isMobileDevice(), [])
+
+  // Separate models for left and right hands
+  const [selectedLeftModel, setSelectedLeftModel] = useState('ability_left')
+  const [selectedRightModel, setSelectedRightModel] = useState('ability_right')
+
   const [handTrackingData, setHandTrackingData] = useState(null)
-  const [manualJointRotations, setManualJointRotations] = useState(createInitialJointRotations())
-  const [cameraJointRotations, setCameraJointRotations] = useState({})
+
+  // Separate joint rotations for left and right hands
+  const [manualJointRotations, setManualJointRotations] = useState({
+    left: createInitialJointRotations(),
+    right: createInitialJointRotations()
+  })
+  const [cameraJointRotations, setCameraJointRotations] = useState({
+    left: {},
+    right: {}
+  })
+
   const [selectedJoint, setSelectedJoint] = useState('wrist')
+  const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
   const [controlMode, setControlMode] = useState('manual') // 'manual' or 'camera'
   const [calibrationStatus, setCalibrationStatus] = useState({ isCalibrated: false })
+
+  // Panel visibility states - default to hidden on mobile
+  const [showCameraPreview, setShowCameraPreview] = useState(!isMobile)
+  const [showControlPanel, setShowControlPanel] = useState(!isMobile)
+  const [showDebugPanel, setShowDebugPanel] = useState(!isMobile)
 
   // Initialize calibration manager (persistent across renders)
   const calibrationManagerRef = useRef(new CalibrationManager())
@@ -56,22 +83,40 @@ export default function App() {
     setCalibrationStatus(calibrationManagerRef.current.getStatus())
   }, [])
 
-  const currentModel = useMemo(() =>
-    HAND_MODELS.find(m => m.id === selectedModel),
-    [selectedModel]
+  const currentLeftModel = useMemo(() =>
+    HAND_MODELS.find(m => m.id === selectedLeftModel),
+    [selectedLeftModel]
+  )
+
+  const currentRightModel = useMemo(() =>
+    HAND_MODELS.find(m => m.id === selectedRightModel),
+    [selectedRightModel]
   )
 
   // Determine which joint rotations to use based on control mode
   const activeJointRotations = useMemo(() => {
-    return controlMode === 'camera' ? cameraJointRotations : manualJointRotations
+    if (controlMode === 'camera') {
+      return {
+        left: cameraJointRotations.left || {},
+        right: cameraJointRotations.right || {}
+      }
+    } else {
+      return {
+        left: manualJointRotations.left || {},
+        right: manualJointRotations.right || {}
+      }
+    }
   }, [controlMode, cameraJointRotations, manualJointRotations])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
       ...prev,
-      [selectedJoint]: rotation
+      [selectedHand]: {
+        ...prev[selectedHand],
+        [selectedJoint]: rotation
+      }
     }))
-  }, [selectedJoint])
+  }, [selectedJoint, selectedHand])
 
   const handleHandResults = useCallback((results) => {
     setHandTrackingData(results)
@@ -86,12 +131,14 @@ export default function App() {
   }, [])
 
   const handleCalibrate = useCallback(() => {
-    if (Object.keys(cameraJointRotations).length === 0) {
+    // For now, calibrate using right hand (or first available)
+    const calibrationData = cameraJointRotations.right || cameraJointRotations.left
+    if (!calibrationData || Object.keys(calibrationData).length === 0) {
       alert('No hand detected. Please show your hand to the camera first.')
       return
     }
 
-    const success = calibrationManagerRef.current.calibrate(cameraJointRotations)
+    const success = calibrationManagerRef.current.calibrate(calibrationData)
     if (success) {
       setCalibrationStatus(calibrationManagerRef.current.getStatus())
       console.log('Calibration successful!')
@@ -101,32 +148,105 @@ export default function App() {
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Scene3D
-        selectedModel={currentModel}
+        leftModel={currentLeftModel}
+        rightModel={currentRightModel}
         handTrackingData={handTrackingData}
-        jointRotations={activeJointRotations}
+        leftJointRotations={activeJointRotations.left}
+        rightJointRotations={activeJointRotations.right}
       />
 
       <HandTrackingCamera
         onHandResults={handleHandResults}
         onJointRotations={handleCameraJointRotations}
         calibrationManager={calibrationManagerRef.current}
+        showPreview={showCameraPreview}
       />
 
-      <ControlPanel
-        jointRotations={activeJointRotations}
-        selectedJoint={selectedJoint}
-        onSelectedJointChange={setSelectedJoint}
-        onJointRotationChange={handleJointRotationChange}
-        selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
-        models={HAND_MODELS}
-        controlMode={controlMode}
-        onControlModeChange={handleControlModeChange}
-        onCalibrate={handleCalibrate}
-        calibrationStatus={calibrationStatus}
-      />
+      {showControlPanel && (
+        <ControlPanel
+          jointRotations={activeJointRotations}
+          selectedJoint={selectedJoint}
+          onSelectedJointChange={setSelectedJoint}
+          onJointRotationChange={handleJointRotationChange}
+          selectedHand={selectedHand}
+          onSelectedHandChange={setSelectedHand}
+          selectedLeftModel={selectedLeftModel}
+          selectedRightModel={selectedRightModel}
+          onLeftModelChange={setSelectedLeftModel}
+          onRightModelChange={setSelectedRightModel}
+          models={HAND_MODELS}
+          controlMode={controlMode}
+          onControlModeChange={handleControlModeChange}
+          onCalibrate={handleCalibrate}
+          calibrationStatus={calibrationStatus}
+        />
+      )}
 
-      <DebugPanel handTrackingData={handTrackingData} />
+      {showDebugPanel && (
+        <DebugPanel handTrackingData={handTrackingData} />
+      )}
+
+      {/* Mobile toggle buttons */}
+      {isMobile && (
+        <div style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          zIndex: 30
+        }}>
+          <button
+            onClick={() => setShowCameraPreview(!showCameraPreview)}
+            style={{
+              padding: '10px 12px',
+              fontSize: '12px',
+              backgroundColor: showCameraPreview ? 'rgba(100, 200, 100, 0.9)' : 'rgba(60, 60, 60, 0.8)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {showCameraPreview ? '📹 Hide' : '📹 Show'} Camera
+          </button>
+          <button
+            onClick={() => setShowControlPanel(!showControlPanel)}
+            style={{
+              padding: '10px 12px',
+              fontSize: '12px',
+              backgroundColor: showControlPanel ? 'rgba(100, 150, 255, 0.9)' : 'rgba(60, 60, 60, 0.8)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {showControlPanel ? '🎮 Hide' : '🎮 Show'} Controls
+          </button>
+          <button
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
+            style={{
+              padding: '10px 12px',
+              fontSize: '12px',
+              backgroundColor: showDebugPanel ? 'rgba(100, 200, 100, 0.9)' : 'rgba(60, 60, 60, 0.8)',
+              color: 'white',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {showDebugPanel ? '🐛 Hide' : '🐛 Show'} Debug
+          </button>
+        </div>
+      )}
     </div>
   )
 }
