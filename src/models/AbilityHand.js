@@ -25,54 +25,85 @@ export default function AbilityHand({ side = 'left', jointRotations = {} }) {
 
   return (
     <group scale={[1, 1, 1]}>
+      {/* Wrist rotation wraps entire hand */}
       <group rotation={[0, 0, wristRot]}>
         <primitive object={wrist.scene.clone()} />
-      </group>
-      <group position={[0.0240476665, 0.00378124745, 0.03232964923]} rotation={[3.14148426, 0.08848813, 3.14036612]}>
-        <primitive object={palm.scene.clone()} />
+        <group position={[0.0240476665, 0.00378124745, 0.03232964923]} rotation={[3.14148426, 0.08848813, 3.14036612]}>
+          <primitive object={palm.scene.clone()} />
         <group rotation={[0, 0, 3.330437]}>
-          <group position={[0.0278283501, 0, -0.0147507]} rotation={[4.450589592585541 + thumbMcp, 0, 0]}>
-            <primitive object={thumbF1.scene.clone()} />
-            <group position={[0.06518669, 0.02334021, -0.00393483]} rotation={[3.141592 + thumbPip, 0, 0.343830]}>
-              <primitive object={thumbF2.scene.clone()} />
+          {/* Thumb MCP - rotation at pivot, then position */}
+          <group rotation={[4.450589592585541 + thumbMcp, 0, 0]}>
+            <group position={[0.0278283501, 0, -0.0147507]}>
+              <primitive object={thumbF1.scene.clone()} />
+              {/* Thumb PIP - rotation at pivot, then position */}
+              <group rotation={[3.141592 + thumbPip, 0, 0.343830]}>
+                <group position={[0.06518669, 0.02334021, -0.00393483]}>
+                  <primitive object={thumbF2.scene.clone()} />
+                </group>
+              </group>
             </group>
           </group>
         </group>
         {/* Index Finger */}
         <group position={[-0.00949, -0.01304, -0.06295]} rotation={[-1.982050, 1.284473, -2.090591]}>
-          <group position={[0.038472723, 0.003257695, 0]} rotation={[0, 0, 0.084474 + indexMcp]}>
-            <primitive object={idxF1.scene.clone()} />
-            <group position={[0.0091241, 0, 0]} rotation={[0, 0, indexPip]}>
-              <primitive object={idxF2.scene.clone()} />
+          {/* Index MCP - rotation at pivot, then position */}
+          <group rotation={[0, 0, 0.084474 + indexMcp]}>
+            <group position={[0.038472723, 0.003257695, 0]}>
+              <primitive object={idxF1.scene.clone()} />
+              {/* Index PIP - rotation at pivot, then position */}
+              <group rotation={[0, 0, indexPip]}>
+                <group position={[0.0091241, 0, 0]}>
+                  <primitive object={idxF2.scene.clone()} />
+                </group>
+              </group>
             </group>
           </group>
         </group>
         {/* Middle Finger */}
         <group position={[0.009653191, -0.015310271, -0.067853949]} rotation={[-1.860531, 1.308458, -1.896217]}>
-          <group position={[0.038472723, 0.003257695, 0]} rotation={[0, 0, 0.084474 + middleMcp]}>
-            <primitive object={idxF1.scene.clone()} />
-            <group position={[0.0091241, 0, 0]} rotation={[0, 0, middlePip]}>
-              <primitive object={idxF2.scene.clone()} />
+          {/* Middle MCP - rotation at pivot, then position */}
+          <group rotation={[0, 0, 0.084474 + middleMcp]}>
+            <group position={[0.038472723, 0.003257695, 0]}>
+              <primitive object={idxF1.scene.clone()} />
+              {/* Middle PIP - rotation at pivot, then position */}
+              <group rotation={[0, 0, middlePip]}>
+                <group position={[0.0091241, 0, 0]}>
+                  <primitive object={idxF2.scene.clone()} />
+                </group>
+              </group>
             </group>
           </group>
         </group>
         {/* Ring Finger */}
         <group position={[0.029954260, -0.014212492, -0.067286105]} rotation={[-1.716598, 1.321452, -1.675862]}>
-          <group position={[0.038472723, 0.003257695, 0]} rotation={[0, 0, 0.084474 + ringMcp]}>
-            <primitive object={idxF1.scene.clone()} />
-            <group position={[0.0091241, 0, 0]} rotation={[0, 0, ringPip]}>
-              <primitive object={idxF2.scene.clone()} />
+          {/* Ring MCP - rotation at pivot, then position */}
+          <group rotation={[0, 0, 0.084474 + ringMcp]}>
+            <group position={[0.038472723, 0.003257695, 0]}>
+              <primitive object={idxF1.scene.clone()} />
+              {/* Ring PIP - rotation at pivot, then position */}
+              <group rotation={[0, 0, ringPip]}>
+                <group position={[0.0091241, 0, 0]}>
+                  <primitive object={idxF2.scene.clone()} />
+                </group>
+              </group>
             </group>
           </group>
         </group>
         {/* Pinky Finger */}
         <group position={[0.049521293, -0.011004583, -0.063029065]} rotation={[-1.765110, 1.322220, -1.658383]}>
-          <group position={[0.038472723, 0.003257695, 0]} rotation={[0, 0, 0.084474 + pinkyMcp]}>
-            <primitive object={idxF1.scene.clone()} />
-            <group position={[0.0091241, 0, 0]} rotation={[0, 0, pinkyPip]}>
-              <primitive object={idxF2.scene.clone()} />
+          {/* Pinky MCP - rotation at pivot, then position */}
+          <group rotation={[0, 0, 0.084474 + pinkyMcp]}>
+            <group position={[0.038472723, 0.003257695, 0]}>
+              <primitive object={idxF1.scene.clone()} />
+              {/* Pinky PIP - rotation at pivot, then position */}
+              <group rotation={[0, 0, pinkyPip]}>
+                <group position={[0.0091241, 0, 0]}>
+                  <primitive object={idxF2.scene.clone()} />
+                </group>
+              </group>
             </group>
           </group>
+        </group>
         </group>
       </group>
     </group>

@@ -1,3 +1,44 @@
+import { memo } from 'react'
+
+// Joint Button Component - defined outside to prevent recreation on every render
+const JointButton = memo(({ jointName, label, isAvailable, selectedJoint, onSelectedJointChange }) => {
+  const isSelected = selectedJoint === jointName
+  const isDisabled = !isAvailable
+
+  return (
+    <button
+      onClick={() => {
+        if (!isDisabled) {
+          onSelectedJointChange(jointName)
+        }
+      }}
+      disabled={isDisabled}
+      style={{
+        padding: '8px 4px',
+        fontSize: '11px',
+        backgroundColor: isSelected
+          ? 'rgba(100, 150, 255, 0.9)'
+          : isDisabled
+          ? 'rgba(80, 80, 80, 0.3)'
+          : 'rgba(255, 255, 255, 0.15)',
+        color: isDisabled ? 'rgba(255, 255, 255, 0.3)' : 'white',
+        border: isSelected ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
+        borderRadius: '4px',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        transition: 'all 0.2s',
+        fontWeight: isSelected ? 'bold' : 'normal',
+        textTransform: 'uppercase',
+        opacity: isDisabled ? 0.5 : 1,
+        pointerEvents: isDisabled ? 'none' : 'auto'
+      }}
+    >
+      {label}
+    </button>
+  )
+})
+
+JointButton.displayName = 'JointButton'
+
 // Define which joints are available for each model
 const MODEL_JOINT_AVAILABILITY = {
   ability_hand: {
@@ -57,43 +98,9 @@ export default function ControlPanel({
     { name: 'ring', label: 'Ring' },
     { name: 'pinky', label: 'Pinky' }
   ]
-  const segments = ['mcp', 'pip', 'dip', 'tip']
+  // Reversed order: fingertip (TIP) at top, base (MCP) at bottom
+  const segments = ['tip', 'dip', 'pip', 'mcp']
 
-  const JointButton = ({ jointName, label, isAvailable }) => {
-    const isSelected = selectedJoint === jointName
-    const isDisabled = !isAvailable
-
-    return (
-      <button
-        onClick={() => {
-          if (!isDisabled) {
-            onSelectedJointChange(jointName)
-          }
-        }}
-        disabled={isDisabled}
-        style={{
-          padding: '8px 4px',
-          fontSize: '11px',
-          backgroundColor: isSelected
-            ? 'rgba(100, 150, 255, 0.9)'
-            : isDisabled
-            ? 'rgba(80, 80, 80, 0.3)'
-            : 'rgba(255, 255, 255, 0.15)',
-          color: isDisabled ? 'rgba(255, 255, 255, 0.3)' : 'white',
-          border: isSelected ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-          borderRadius: '4px',
-          cursor: isDisabled ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s',
-          fontWeight: isSelected ? 'bold' : 'normal',
-          textTransform: 'uppercase',
-          opacity: isDisabled ? 0.5 : 1,
-          pointerEvents: isDisabled ? 'none' : 'auto'
-        }}
-      >
-        {label}
-      </button>
-    )
-  }
   return (
     <div style={{
       position: 'absolute',
@@ -196,6 +203,8 @@ export default function ControlPanel({
                     jointName={jointName}
                     label={segment}
                     isAvailable={jointAvailability[jointName]}
+                    selectedJoint={selectedJoint}
+                    onSelectedJointChange={onSelectedJointChange}
                   />
                 )
               })}
