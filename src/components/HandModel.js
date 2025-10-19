@@ -10,9 +10,8 @@ function HandModelInner({
   modelPath = 'ability_hand',
   side = 'left',
   jointRotations = {},
-  gimbalRotation = { x: 0, y: 0, z: 0 },
   cameraPosition = null,
-  showAxes = true
+  zRotationOffset = 0
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -26,9 +25,7 @@ function HandModelInner({
               side={side}
               jointRotations={jointRotations}
               position={[0, 0, 0]}
-              gimbalRotation={gimbalRotation}
               cameraPosition={cameraPosition}
-              showAxes={showAxes}
             />
           )
         }
@@ -54,9 +51,7 @@ function HandModelInner({
               side={side}
               jointRotations={jointRotations}
               position={[0, 0, 0]}
-              gimbalRotation={gimbalRotation}
               cameraPosition={cameraPosition}
-              showAxes={showAxes}
             />
           )
         }
@@ -87,7 +82,7 @@ function HandModelInner({
   }
 
   return (
-    <group position={position}>
+    <group position={position} rotation={[0, 0, zRotationOffset]}>
       {renderModel()}
     </group>
   )

@@ -18,7 +18,9 @@ export default function Scene3D({
   onRightGimbalChange,
   showGimbals,
   enableCameraPosition,
-  showAxes = true
+  showAxes = true,
+  leftHandZRotation = 0,
+  rightHandZRotation = 0
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -79,7 +81,16 @@ export default function Scene3D({
 
       {/* Left Hand Model with Gimbal Control */}
       {leftModel && (
-        <group position={[0.3, 0, 0]}>
+        <group
+          position={[0.3, 0, 0]}
+          rotation={[
+            safeLeftRotations.wristOrientation?.x || 0,
+            safeLeftRotations.wristOrientation?.y || 0,
+            safeLeftRotations.wristOrientation?.z || 0
+          ]}
+        >
+          {/* Axes rotate with wrist rotation from camera */}
+          {showAxes && <axesHelper args={[0.15]} />}
           <GimbalControl
             position={[0, 0, 0]}
             rotation={safeLeftGimbal}
@@ -94,9 +105,8 @@ export default function Scene3D({
               side={leftModel.side}
               handTrackingData={handTrackingData}
               jointRotations={safeLeftRotations}
-              gimbalRotation={safeLeftGimbal}
               cameraPosition={enableCameraPosition ? leftHandPosition : null}
-              showAxes={showAxes}
+              zRotationOffset={leftHandZRotation}
             />
           </GimbalControl>
         </group>
@@ -104,7 +114,16 @@ export default function Scene3D({
 
       {/* Right Hand Model with Gimbal Control */}
       {rightModel && (
-        <group position={[-0.3, 0, 0]}>
+        <group
+          position={[-0.3, 0, 0]}
+          rotation={[
+            safeRightRotations.wristOrientation?.x || 0,
+            safeRightRotations.wristOrientation?.y || 0,
+            safeRightRotations.wristOrientation?.z || 0
+          ]}
+        >
+          {/* Axes rotate with wrist rotation from camera */}
+          {showAxes && <axesHelper args={[0.15]} />}
           <GimbalControl
             position={[0, 0, 0]}
             rotation={safeRightGimbal}
@@ -119,9 +138,8 @@ export default function Scene3D({
               side={rightModel.side}
               handTrackingData={handTrackingData}
               jointRotations={safeRightRotations}
-              gimbalRotation={safeRightGimbal}
               cameraPosition={enableCameraPosition ? rightHandPosition : null}
-              showAxes={showAxes}
+              zRotationOffset={rightHandZRotation}
             />
           </GimbalControl>
         </group>

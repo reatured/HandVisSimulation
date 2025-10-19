@@ -74,6 +74,10 @@ export default function App() {
   const [leftHandGimbal, setLeftHandGimbal] = useState({ x: 0, y: 0, z: 0 })
   const [rightHandGimbal, setRightHandGimbal] = useState({ x: 0, y: 0, z: 0 })
 
+  // Manual Z-axis rotation offsets for each hand (in radians)
+  const [leftHandZRotation, setLeftHandZRotation] = useState(0)
+  const [rightHandZRotation, setRightHandZRotation] = useState(0)
+
   // Gimbal visibility toggle
   const [showGimbals, setShowGimbals] = useState(true)
 
@@ -181,6 +185,17 @@ export default function App() {
     }
   }, [cameraJointRotations])
 
+  // Handlers for manual Z-axis rotation (90 degree increments)
+  const handleLeftHandRotateZ = useCallback((direction) => {
+    const increment = direction * (Math.PI / 2) // 90 degrees in radians
+    setLeftHandZRotation(prev => prev + increment)
+  }, [])
+
+  const handleRightHandRotateZ = useCallback((direction) => {
+    const increment = direction * (Math.PI / 2) // 90 degrees in radians
+    setRightHandZRotation(prev => prev + increment)
+  }, [])
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Scene3D
@@ -198,6 +213,8 @@ export default function App() {
         showGimbals={showGimbals}
         showAxes={showAxes}
         enableCameraPosition={enableCameraPosition}
+        leftHandZRotation={leftHandZRotation}
+        rightHandZRotation={rightHandZRotation}
       />
 
       <HandTrackingCamera
@@ -233,6 +250,10 @@ export default function App() {
           onEnableCameraPositionChange={setEnableCameraPosition}
           swapHandControls={swapHandControls}
           onSwapHandControlsChange={setSwapHandControls}
+          leftHandZRotation={leftHandZRotation}
+          rightHandZRotation={rightHandZRotation}
+          onLeftHandRotateZ={handleLeftHandRotateZ}
+          onRightHandRotateZ={handleRightHandRotateZ}
         />
       )}
 

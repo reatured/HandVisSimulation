@@ -156,13 +156,11 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
           onHandPositionsRef.current(handPositions)
         }
       } else {
-        // No hands detected - send null for both
-        if (onJointRotationsRef.current) {
-          onJointRotationsRef.current({ left: null, right: null })
-        }
+        // No hands detected - reset positions but preserve rotations
         if (onHandPositionsRef.current) {
           onHandPositionsRef.current({ left: null, right: null })
         }
+        // Note: We don't reset onJointRotations - this preserves the last known pose
       }
     }
 

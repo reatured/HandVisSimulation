@@ -122,10 +122,27 @@ HandVisSimulation/
 - Shows placeholders for unimplemented models
 - Wraps components in Suspense for async loading
 
-**`ModelSelector.js`**
-- Bottom UI panel for model selection
-- Dropdown menu with all available hand models
-- Displays usage hints
+**`ControlPanel.js`**
+- Interactive control panel for hand manipulation
+- Model selection for left and right hands
+- Camera tracking vs manual control modes
+- Calibration controls for camera tracking
+- Gimbal and axes visibility toggles
+- Manual Z-axis rotation controls (±90° buttons)
+- Hand control mapping (swap left/right)
+
+**`GimbalControl.js`**
+- Interactive 3D gimbal widget using PivotControls
+- Allows drag-to-rotate hand orientation
+- Provides visual feedback with colored rotation rings
+- Disables orbit controls during gimbal interaction
+
+**`URDFHandModel.js`**
+- Loads URDF-based robotic hand models
+- Parses URDF files and loads associated GLB meshes
+- Applies individual joint rotations via setJointValue()
+- Handles camera position tracking
+- Supports multiple hand models (Ability, Shadow, Allegro, etc.)
 
 ### Model Components
 
@@ -139,6 +156,55 @@ HandVisSimulation/
 - Loads Inspire Hand GLB mesh files
 - Basic hand structure implementation
 - Supports left/right hand variants
+
+## 3D Scene Hierarchy
+
+The application uses a layered rotation system for precise hand control:
+
+```
+Scene3D
+└── Hand mesh group (positioned at [±0.3, 0, 0])
+    │   Rotation Level 1: Wrist rotation from camera tracking
+    │   Controls: Calculated from MediaPipe hand landmarks
+    │
+    ├── axesHelper (Red=X, Green=Y, Blue=Z)
+    │   └── Rotates with wrist rotation from camera
+    │
+    └── GimbalControl (PivotControls widget)
+        │   Rotation Level 2: Gimbal offset rotation
+        │   Controls: Interactive 3D drag handles
+        │
+        └── HandModel wrapper
+            │   Rotation Level 3: Manual Z-axis offset
+            │   Controls: ±90° rotation buttons in UI
+            │
+            └── URDFHandModel
+                │   Position: Camera position tracking (optional)
+                │
+                └── URDF Robot
+                    │   Rotation Level 4: Individual joint rotations
+                    │   Controls: Camera joint tracking or manual sliders
+                    │
+                    ├── robot.links[...] (Visual meshes)
+                    └── robot.joints[...] (Articulated joints)
+```
+
+### Rotation Stack Explanation
+
+1. **Wrist Rotation (Camera Tracking)**: Applied at the hand mesh group level, this rotation comes from MediaPipe's wrist orientation detection. The coordinate axes rotate with this to show the hand's orientation in space.
+
+2. **Gimbal Offset**: The interactive gimbal control allows users to manually adjust the overall hand orientation by dragging the colored rotation rings (red=X, green=Y, blue=Z).
+
+3. **Z-Axis Manual Offset**: The ±90° rotation buttons in the control panel apply discrete rotations around the blue (Z) axis. This is useful for adjusting model orientation without affecting the wrist tracking or gimbal.
+
+4. **Individual Joint Rotations**: Each finger joint (MCP, PIP, DIP, TIP) can be controlled independently either through camera tracking or manual sliders, allowing for detailed hand pose control.
+
+### Key Design Principles
+
+- **Separation of Concerns**: Each rotation level serves a distinct purpose and can be controlled independently
+- **Visual Feedback**: Axes helpers and gimbal rings provide clear visual reference for orientation
+- **Hierarchical Transforms**: Child transformations are relative to parent transformations, allowing complex poses
+- **Camera Independence**: Position and rotation can be tracked from camera or set manually
 
 ## Setup
 

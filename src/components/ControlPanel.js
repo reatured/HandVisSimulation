@@ -98,7 +98,11 @@ export default function ControlPanel({
   swapHandControls,
   onSwapHandControlsChange,
   showAxes,
-  onShowAxesChange
+  onShowAxesChange,
+  leftHandZRotation,
+  rightHandZRotation,
+  onLeftHandRotateZ,
+  onRightHandRotateZ
 }) {
   // Get model path for the currently selected hand to determine joint availability
   const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
@@ -391,6 +395,151 @@ export default function ControlPanel({
           {swapHandControls
             ? 'Left hand controls right model, right hand controls left model'
             : 'Left hand controls left model, right hand controls right model'}
+        </div>
+      </div>
+
+      {/* Manual Model Rotation (Z-Axis) - Always visible */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Manual Model Rotation (Blue/Z-Axis)
+        </label>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginBottom: '10px',
+          lineHeight: '1.3'
+        }}>
+          Rotate the hand model around the blue (Z) axis in 90° increments
+        </div>
+
+        {/* Left Hand Controls */}
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{
+            color: 'rgba(255, 200, 150, 0.9)',
+            fontSize: '12px',
+            marginBottom: '6px',
+            fontWeight: '600'
+          }}>
+            Left Hand: {(leftHandZRotation * 180 / Math.PI).toFixed(0)}°
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px'
+          }}>
+            <button
+              onClick={() => onLeftHandRotateZ(-1)}
+              style={{
+                padding: '10px 8px',
+                fontSize: '13px',
+                backgroundColor: 'rgba(255, 150, 100, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(255, 200, 150, 0.5)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 1)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.8)'
+              }}
+            >
+              ← Rotate -90°
+            </button>
+            <button
+              onClick={() => onLeftHandRotateZ(1)}
+              style={{
+                padding: '10px 8px',
+                fontSize: '13px',
+                backgroundColor: 'rgba(255, 150, 100, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(255, 200, 150, 0.5)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 1)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.8)'
+              }}
+            >
+              Rotate +90° →
+            </button>
+          </div>
+        </div>
+
+        {/* Right Hand Controls */}
+        <div>
+          <div style={{
+            color: 'rgba(150, 200, 255, 0.9)',
+            fontSize: '12px',
+            marginBottom: '6px',
+            fontWeight: '600'
+          }}>
+            Right Hand: {(rightHandZRotation * 180 / Math.PI).toFixed(0)}°
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px'
+          }}>
+            <button
+              onClick={() => onRightHandRotateZ(-1)}
+              style={{
+                padding: '10px 8px',
+                fontSize: '13px',
+                backgroundColor: 'rgba(100, 150, 255, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(150, 200, 255, 0.5)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 1)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.8)'
+              }}
+            >
+              ← Rotate -90°
+            </button>
+            <button
+              onClick={() => onRightHandRotateZ(1)}
+              style={{
+                padding: '10px 8px',
+                fontSize: '13px',
+                backgroundColor: 'rgba(100, 150, 255, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(150, 200, 255, 0.5)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontWeight: '600'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 1)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.8)'
+              }}
+            >
+              Rotate +90° →
+            </button>
+          </div>
         </div>
       </div>
 
