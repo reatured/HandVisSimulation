@@ -67,11 +67,11 @@ export default function App() {
 
   const [selectedJoint, setSelectedJoint] = useState('wrist')
   const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
-  const [controlMode, setControlMode] = useState('manual') // 'manual' or 'camera'
+  const [controlMode, setControlMode] = useState('camera') // 'manual' or 'camera' - default to camera
   const [calibrationStatus, setCalibrationStatus] = useState({ isCalibrated: false })
 
-  // Panel visibility states - default to hidden on mobile
-  const [showCameraPreview, setShowCameraPreview] = useState(!isMobile)
+  // Panel visibility states - camera preview always visible, control/debug only on desktop
+  const [showCameraPreview, setShowCameraPreview] = useState(true)
   const [showControlPanel, setShowControlPanel] = useState(!isMobile)
   const [showDebugPanel, setShowDebugPanel] = useState(!isMobile)
 
@@ -186,15 +186,12 @@ export default function App() {
         <DebugPanel handTrackingData={handTrackingData} />
       )}
 
-      {/* Mobile toggle buttons */}
+      {/* Mobile camera toggle button */}
       {isMobile && (
         <div style={{
           position: 'absolute',
           top: 10,
           right: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
           zIndex: 30
         }}>
           <button
@@ -213,34 +210,30 @@ export default function App() {
           >
             {showCameraPreview ? '📹 Hide' : '📹 Show'} Camera
           </button>
-          <button
-            onClick={() => setShowControlPanel(!showControlPanel)}
-            style={{
-              padding: '10px 12px',
-              fontSize: '12px',
-              backgroundColor: showControlPanel ? 'rgba(100, 150, 255, 0.9)' : 'rgba(60, 60, 60, 0.8)',
-              color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {showControlPanel ? '🎮 Hide' : '🎮 Show'} Controls
-          </button>
+        </div>
+      )}
+
+      {/* Desktop debug panel toggle button */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          zIndex: 30
+        }}>
           <button
             onClick={() => setShowDebugPanel(!showDebugPanel)}
             style={{
-              padding: '10px 12px',
-              fontSize: '12px',
-              backgroundColor: showDebugPanel ? 'rgba(100, 200, 100, 0.9)' : 'rgba(60, 60, 60, 0.8)',
+              padding: '10px 14px',
+              fontSize: '13px',
+              backgroundColor: showDebugPanel ? 'rgba(0, 255, 0, 0.8)' : 'rgba(60, 60, 60, 0.8)',
               color: 'white',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
+              border: showDebugPanel ? '2px solid #00ff00' : '1px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '6px',
               cursor: 'pointer',
               fontWeight: '600',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              fontFamily: 'monospace'
             }}
           >
             {showDebugPanel ? '🐛 Hide' : '🐛 Show'} Debug

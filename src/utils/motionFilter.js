@@ -17,18 +17,21 @@ class ExponentialMovingAverageFilter {
    * Apply filter to a single value
    * @param {string} key - Identifier for the value (e.g., joint name)
    * @param {number} newValue - New value to filter
+   * @param {string} prefix - Optional prefix for key (e.g., 'left' or 'right')
    * @returns {number} - Filtered value
    */
-  filter(key, newValue) {
-    if (!(key in this.previousValues)) {
+  filter(key, newValue, prefix = '') {
+    const fullKey = prefix ? `${prefix}_${key}` : key
+
+    if (!(fullKey in this.previousValues)) {
       // First value, no filtering
-      this.previousValues[key] = newValue
+      this.previousValues[fullKey] = newValue
       return newValue
     }
 
     // EMA formula: filtered = alpha * new + (1 - alpha) * previous
-    const filtered = this.alpha * newValue + (1 - this.alpha) * this.previousValues[key]
-    this.previousValues[key] = filtered
+    const filtered = this.alpha * newValue + (1 - this.alpha) * this.previousValues[fullKey]
+    this.previousValues[fullKey] = filtered
 
     return filtered
   }
@@ -36,13 +39,14 @@ class ExponentialMovingAverageFilter {
   /**
    * Apply filter to all joints in rotation object
    * @param {Object} rotations - Joint rotations {joint_name: angle}
+   * @param {string} prefix - Optional prefix for keys (e.g., 'left' or 'right')
    * @returns {Object} - Filtered rotations
    */
-  filterAll(rotations) {
+  filterAll(rotations, prefix = '') {
     const filtered = {}
 
     for (const [joint, value] of Object.entries(rotations)) {
-      filtered[joint] = this.filter(joint, value)
+      filtered[joint] = this.filter(joint, value, prefix)
     }
 
     return filtered
@@ -80,22 +84,25 @@ class VelocityLimiter {
    * @param {string} key - Identifier for the value
    * @param {number} newValue - New value
    * @param {number} timestamp - Current timestamp in ms
+   * @param {string} prefix - Optional prefix for key (e.g., 'left' or 'right')
    * @returns {number} - Velocity-limited value
    */
-  limit(key, newValue, timestamp = Date.now()) {
-    if (!(key in this.previousValues)) {
+  limit(key, newValue, timestamp = Date.now(), prefix = '') {
+    const fullKey = prefix ? `${prefix}_${key}` : key
+
+    if (!(fullKey in this.previousValues)) {
       // First value, no limiting
-      this.previousValues[key] = newValue
-      this.previousTimestamps[key] = timestamp
+      this.previousValues[fullKey] = newValue
+      this.previousTimestamps[fullKey] = timestamp
       return newValue
     }
 
-    const deltaTime = (timestamp - this.previousTimestamps[key]) / 1000 // Convert to seconds
+    const deltaTime = (timestamp - this.previousTimestamps[fullKey]) / 1000 // Convert to seconds
     if (deltaTime <= 0) {
-      return this.previousValues[key] // No time passed, return previous value
+      return this.previousValues[fullKey] // No time passed, return previous value
     }
 
-    const deltaValue = newValue - this.previousValues[key]
+    const deltaValue = newValue - this.previousValues[fullKey]
     const velocity = Math.abs(deltaValue) / deltaTime
 
     let limitedValue = newValue
@@ -104,11 +111,11 @@ class VelocityLimiter {
       // Cap the velocity
       const maxDelta = this.maxVelocity * deltaTime
       const direction = Math.sign(deltaValue)
-      limitedValue = this.previousValues[key] + direction * maxDelta
+      limitedValue = this.previousValues[fullKey] + direction * maxDelta
     }
 
-    this.previousValues[key] = limitedValue
-    this.previousTimestamps[key] = timestamp
+    this.previousValues[fullKey] = limitedValue
+    this.previousTimestamps[fullKey] = timestamp
 
     return limitedValue
   }
@@ -117,13 +124,14 @@ class VelocityLimiter {
    * Apply velocity limiting to all joints
    * @param {Object} rotations - Joint rotations
    * @param {number} timestamp - Current timestamp
+   * @param {string} prefix - Optional prefix for keys (e.g., 'left' or 'right')
    * @returns {Object} - Velocity-limited rotations
    */
-  limitAll(rotations, timestamp = Date.now()) {
+  limitAll(rotations, timestamp = Date.now(), prefix = '') {
     const limited = {}
 
     for (const [joint, value] of Object.entries(rotations)) {
-      limited[joint] = this.limit(joint, value, timestamp)
+      limited[joint] = this.limit(joint, value, timestamp, prefix)
     }
 
     return limited
@@ -268,24 +276,64 @@ export class MotionFilter {
 
   /**
    * Apply full filter pipeline to rotations
-   * @param {Object} rotations - Raw joint rotations
+   * @param {Object} rotations - Raw joint rotations (can be flat object or {wristOrientation, joints})
    * @param {number} timestamp - Current timestamp
+   * @param {string} prefix - Optional prefix for keys (e.g., 'left' or 'right')
    * @returns {Object} - Filtered rotations
    */
-  filter(rotations, timestamp = Date.now()) {
+  filter(rotations, timestamp = Date.now(), prefix = '') {
+    // Handle new data structure with wristOrientation and joints
+    if (rotations.wristOrientation && rotations.joints) {
+      // New structure: separate wrist orientation and joints
+      const filteredJoints = { ...rotations.joints }
+      const filteredWrist = { ...rotations.wristOrientation }
+
+      // Filter joints
+      let processedJoints = filteredJoints
+      if (this.enabled.smoothing) {
+        processedJoints = this.smoothingFilter.filterAll(processedJoints, prefix)
+      }
+      if (this.enabled.velocityLimiting) {
+        processedJoints = this.velocityLimiter.limitAll(processedJoints, timestamp, prefix)
+      }
+      if (this.enabled.constraints) {
+        processedJoints = this.constraints.constrain(processedJoints)
+      }
+
+      // Filter wrist orientation (x, y, z Euler angles)
+      let processedWrist = filteredWrist
+      if (this.enabled.smoothing) {
+        processedWrist = {
+          x: this.smoothingFilter.filter('wrist_orient_x', filteredWrist.x, prefix),
+          y: this.smoothingFilter.filter('wrist_orient_y', filteredWrist.y, prefix),
+          z: this.smoothingFilter.filter('wrist_orient_z', filteredWrist.z, prefix)
+        }
+      }
+      if (this.enabled.velocityLimiting) {
+        processedWrist = {
+          x: this.velocityLimiter.limit('wrist_orient_x', processedWrist.x, timestamp, prefix),
+          y: this.velocityLimiter.limit('wrist_orient_y', processedWrist.y, timestamp, prefix),
+          z: this.velocityLimiter.limit('wrist_orient_z', processedWrist.z, timestamp, prefix)
+        }
+      }
+
+      return {
+        wristOrientation: processedWrist,
+        joints: processedJoints
+      }
+    }
+
+    // Old structure: flat object (backward compatibility)
     let filtered = { ...rotations }
 
-    // Apply smoothing
     if (this.enabled.smoothing) {
-      filtered = this.smoothingFilter.filterAll(filtered)
+      filtered = this.smoothingFilter.filterAll(filtered, prefix)
     }
 
-    // Apply velocity limiting
     if (this.enabled.velocityLimiting) {
-      filtered = this.velocityLimiter.limitAll(filtered, timestamp)
+      filtered = this.velocityLimiter.limitAll(filtered, timestamp, prefix)
     }
 
-    // Apply constraints
     if (this.enabled.constraints) {
       filtered = this.constraints.constrain(filtered)
     }

@@ -2,18 +2,22 @@ import { useLoader } from '@react-three/fiber'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 export default function AbilityHand({ side = 'left', jointRotations = {} }) {
+  // Handle both old format (flat object) and new format (with joints and wristOrientation)
+  const joints = jointRotations.joints || jointRotations
+  const wristOrientation = jointRotations.wristOrientation || { x: 0, y: 0, z: 0 }
+
   // Extract individual joint rotations with defaults
-  const wristRot = jointRotations.wrist || 0
-  const thumbMcp = jointRotations.thumb_mcp || 0
-  const thumbPip = jointRotations.thumb_pip || 0
-  const indexMcp = jointRotations.index_mcp || 0
-  const indexPip = jointRotations.index_pip || 0
-  const middleMcp = jointRotations.middle_mcp || 0
-  const middlePip = jointRotations.middle_pip || 0
-  const ringMcp = jointRotations.ring_mcp || 0
-  const ringPip = jointRotations.ring_pip || 0
-  const pinkyMcp = jointRotations.pinky_mcp || 0
-  const pinkyPip = jointRotations.pinky_pip || 0
+  const wristRot = joints.wrist || 0
+  const thumbMcp = joints.thumb_mcp || 0
+  const thumbPip = joints.thumb_pip || 0
+  const indexMcp = joints.index_mcp || 0
+  const indexPip = joints.index_pip || 0
+  const middleMcp = joints.middle_mcp || 0
+  const middlePip = joints.middle_pip || 0
+  const ringMcp = joints.ring_mcp || 0
+  const ringPip = joints.ring_pip || 0
+  const pinkyMcp = joints.pinky_mcp || 0
+  const pinkyPip = joints.pinky_pip || 0
   const PUBLIC_URL = process.env.PUBLIC_URL || ''
   const basePath = `${PUBLIC_URL}/assets/robots/hands/ability_hand/meshes/visual`
 
@@ -26,8 +30,8 @@ export default function AbilityHand({ side = 'left', jointRotations = {} }) {
 
   return (
     <group scale={[1, 1, 1]}>
-      {/* Wrist rotation wraps entire hand */}
-      <group rotation={[0, 0, wristRot]}>
+      {/* Wrist rotation wraps entire hand - now supports 3D rotation */}
+      <group rotation={[wristOrientation.x, wristOrientation.y, wristOrientation.z + wristRot]}>
         <primitive object={wrist.scene.clone()} />
         <group position={[0.0240476665, 0.00378124745, 0.03232964923]} rotation={[3.14148426, 0.08848813, 3.14036612]}>
           <primitive object={palm.scene.clone()} />

@@ -107,8 +107,11 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, ca
           // Convert landmarks to joint rotations
           let rotations = landmarksToJointRotations(landmarks, handedness)
 
-          // Apply motion filtering
-          rotations = motionFilterRef.current.filter(rotations, Date.now())
+          // Create hand prefix for filter (lowercase for consistency)
+          const handPrefix = handedness === 'Left' ? 'left' : 'right'
+
+          // Apply motion filtering with hand-specific prefix
+          rotations = motionFilterRef.current.filter(rotations, Date.now(), handPrefix)
 
           // Apply calibration if available
           if (calibrationManager) {

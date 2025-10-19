@@ -118,40 +118,50 @@ export default function URDFHandModel({
 
   // Apply joint rotations when they change
   useEffect(() => {
-    if (!robot || Object.keys(jointRotations).length === 0) return
+    if (!robot) return
+
+    // Handle both old format (flat object) and new format (with joints and wristOrientation)
+    const joints = jointRotations.joints || jointRotations
+    const wristOrientation = jointRotations.wristOrientation || null
+
+    // Apply wrist orientation if available
+    if (wristOrientation && groupRef.current) {
+      groupRef.current.rotation.set(
+        wristOrientation.x,
+        wristOrientation.y,
+        wristOrientation.z
+      )
+    }
 
     // Apply each joint rotation
-    Object.entries(jointRotations).forEach(([uiJointName, angle]) => {
-      // Map UI joint name to URDF joint name
-      const urdfJointName = mapUIJointToURDF(uiJointName, modelPath)
+    if (Object.keys(joints).length > 0) {
+      Object.entries(joints).forEach(([uiJointName, angle]) => {
+        // Map UI joint name to URDF joint name
+        const urdfJointName = mapUIJointToURDF(uiJointName, modelPath)
 
-      if (!urdfJointName) {
-        // Skip if no mapping exists
-        return
-      }
+        if (!urdfJointName) {
+          // Skip if no mapping exists
+          return
+        }
 
-      // Check if the joint exists in the robot
-      const joint = robot.joints[urdfJointName]
-      if (!joint) {
-        console.warn(`Joint not found in robot: ${urdfJointName} (UI: ${uiJointName})`)
-        return
-      }
+        // Check if the joint exists in the robot
+        const joint = robot.joints[urdfJointName]
+        if (!joint) {
+          // Only warn once per joint
+          return
+        }
 
-      // Clamp the angle to joint limits
-      const clampedAngle = clampJointValue(angle, urdfJointName, modelPath)
+        // Clamp the angle to joint limits
+        const clampedAngle = clampJointValue(angle, urdfJointName, modelPath)
 
-      // Log if value was clamped (for debugging)
-      if (clampedAngle !== angle) {
-        console.log(`Joint ${urdfJointName}: clamped ${angle.toFixed(3)} to ${clampedAngle.toFixed(3)}`)
-      }
-
-      // Apply the rotation
-      try {
-        joint.setJointValue(clampedAngle)
-      } catch (error) {
-        console.error(`Error setting joint value for ${urdfJointName}:`, error)
-      }
-    })
+        // Apply the rotation
+        try {
+          joint.setJointValue(clampedAngle)
+        } catch (error) {
+          console.error(`Error setting joint value for ${urdfJointName}:`, error)
+        }
+      })
+    }
   }, [robot, jointRotations, modelPath])
 
   // Render loading state

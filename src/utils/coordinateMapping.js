@@ -52,7 +52,7 @@ export class CalibrationManager {
 
   /**
    * Apply calibration offsets to rotations
-   * @param {Object} rotations - Raw joint rotations
+   * @param {Object} rotations - Raw joint rotations (can be flat object or {wristOrientation, joints})
    * @returns {Object} - Calibrated rotations
    */
   applyCalibration(rotations) {
@@ -60,6 +60,36 @@ export class CalibrationManager {
       return rotations // No calibration, return as-is
     }
 
+    // Handle new data structure with wristOrientation and joints
+    if (rotations.wristOrientation && rotations.joints) {
+      const calibratedJoints = {}
+      const calibratedWrist = { ...rotations.wristOrientation }
+
+      // Calibrate joints
+      for (const [joint, angle] of Object.entries(rotations.joints)) {
+        const offset = this.calibrationOffsets[joint] || 0
+        calibratedJoints[joint] = angle - offset
+
+        // Ensure we don't go negative for flexion-only joints
+        if (joint !== 'wrist' && joint.includes('_')) {
+          calibratedJoints[joint] = Math.max(0, calibratedJoints[joint])
+        }
+      }
+
+      // Calibrate wrist orientation (if offsets exist)
+      if (this.calibrationOffsets.wrist_orient_x !== undefined) {
+        calibratedWrist.x -= this.calibrationOffsets.wrist_orient_x || 0
+        calibratedWrist.y -= this.calibrationOffsets.wrist_orient_y || 0
+        calibratedWrist.z -= this.calibrationOffsets.wrist_orient_z || 0
+      }
+
+      return {
+        wristOrientation: calibratedWrist,
+        joints: calibratedJoints
+      }
+    }
+
+    // Old structure: flat object (backward compatibility)
     const calibrated = {}
 
     for (const [joint, angle] of Object.entries(rotations)) {
@@ -67,7 +97,6 @@ export class CalibrationManager {
       calibrated[joint] = angle - offset
 
       // Ensure we don't go negative for flexion-only joints
-      // (most finger joints can't extend beyond straight)
       if (joint !== 'wrist' && joint.includes('_')) {
         calibrated[joint] = Math.max(0, calibrated[joint])
       }

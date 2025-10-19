@@ -122,18 +122,79 @@ function calculateFingerSpread(landmarks, fingerMcpIdx, referenceMcpIdx) {
 }
 
 /**
+ * Calculate wrist orientation from hand landmarks
+ * Uses palm plane to determine hand rotation in 3D space
+ * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
+ * @param {string} handedness - 'Left' or 'Right'
+ * @returns {Object} - Euler angles {x, y, z} in radians
+ */
+export function calculateWristOrientation(landmarks, handedness = 'Right') {
+  if (!landmarks || landmarks.length !== 21) {
+    return { x: 0, y: 0, z: 0 }
+  }
+
+  // Key palm landmarks for orientation calculation
+  const wrist = landmarks[LANDMARKS.WRIST]
+  const indexMcp = landmarks[LANDMARKS.INDEX_MCP]
+  const middleMcp = landmarks[LANDMARKS.MIDDLE_MCP]
+  const pinkyMcp = landmarks[LANDMARKS.PINKY_MCP]
+
+  // Create vectors for palm plane
+  const wristVec = new THREE.Vector3(wrist.x, wrist.y, wrist.z)
+  const indexVec = new THREE.Vector3(indexMcp.x, indexMcp.y, indexMcp.z)
+  const middleVec = new THREE.Vector3(middleMcp.x, middleMcp.y, middleMcp.z)
+  const pinkyVec = new THREE.Vector3(pinkyMcp.x, pinkyMcp.y, pinkyMcp.z)
+
+  // Calculate palm forward vector (from wrist to middle finger base)
+  const palmForward = new THREE.Vector3().subVectors(middleVec, wristVec).normalize()
+
+  // Calculate palm right vector (from pinky to index)
+  const palmRight = new THREE.Vector3().subVectors(indexVec, pinkyVec).normalize()
+
+  // Calculate palm normal (perpendicular to palm surface)
+  const palmNormal = new THREE.Vector3().crossVectors(palmForward, palmRight).normalize()
+
+  // Recalculate right to ensure orthogonality
+  palmRight.crossVectors(palmNormal, palmForward).normalize()
+
+  // Build rotation matrix from these vectors
+  // In MediaPipe: Y is down, Z is toward camera, X is right
+  // We want: palm normal as up, palm forward as forward
+  const rotationMatrix = new THREE.Matrix4()
+  rotationMatrix.makeBasis(palmRight, palmNormal, palmForward.clone().negate())
+
+  // Extract Euler angles from rotation matrix
+  const euler = new THREE.Euler()
+  euler.setFromRotationMatrix(rotationMatrix, 'XYZ')
+
+  // Apply hand-specific transformations
+  // MediaPipe's coordinate system needs adjustment for Three.js
+  let { x, y, z } = euler
+
+  // Mirror for left hand
+  if (handedness === 'Left') {
+    z = -z
+    x = -x
+  }
+
+  console.log(`Wrist orientation (${handedness}): x=${x.toFixed(2)}, y=${y.toFixed(2)}, z=${z.toFixed(2)}`)
+
+  return { x, y, z }
+}
+
+/**
  * Convert MediaPipe landmarks to joint rotations
  * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
  * @param {string} handedness - 'Left' or 'Right'
- * @returns {Object} - Joint rotations in radians {joint_name: angle}
+ * @returns {Object} - Joint rotations and wrist orientation
  */
 export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   if (!landmarks || landmarks.length !== 21) {
     console.warn('Invalid landmarks: expected 21 points')
-    return {}
+    return { wristOrientation: { x: 0, y: 0, z: 0 }, joints: {} }
   }
 
-  const rotations = {}
+  const joints = {}
 
   // THUMB - Special handling due to different anatomy
   // Thumb has CMC (carpometacarpal) which provides opposition
@@ -163,10 +224,10 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.INDEX_MCP
   )
 
-  rotations.thumb_mcp = thumbMcpCurl
-  rotations.thumb_pip = thumbIpCurl
-  rotations.thumb_dip = thumbIpCurl * 0.8 // DIP typically follows IP
-  rotations.thumb_tip = thumbIpCurl * 0.5
+  joints.thumb_mcp = thumbMcpCurl
+  joints.thumb_pip = thumbIpCurl
+  joints.thumb_dip = thumbIpCurl * 0.8 // DIP typically follows IP
+  joints.thumb_tip = thumbIpCurl * 0.5
 
   // INDEX FINGER
   const indexMcpCurl = calculateFingerCurl(
@@ -188,10 +249,10 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.INDEX_TIP
   )
 
-  rotations.index_mcp = indexMcpCurl
-  rotations.index_pip = indexPipCurl
-  rotations.index_dip = indexDipCurl
-  rotations.index_tip = indexDipCurl * 0.7
+  joints.index_mcp = indexMcpCurl
+  joints.index_pip = indexPipCurl
+  joints.index_dip = indexDipCurl
+  joints.index_tip = indexDipCurl * 0.7
 
   // MIDDLE FINGER
   const middleMcpCurl = calculateFingerCurl(
@@ -213,10 +274,10 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.MIDDLE_TIP
   )
 
-  rotations.middle_mcp = middleMcpCurl
-  rotations.middle_pip = middlePipCurl
-  rotations.middle_dip = middleDipCurl
-  rotations.middle_tip = middleDipCurl * 0.7
+  joints.middle_mcp = middleMcpCurl
+  joints.middle_pip = middlePipCurl
+  joints.middle_dip = middleDipCurl
+  joints.middle_tip = middleDipCurl * 0.7
 
   // RING FINGER
   const ringMcpCurl = calculateFingerCurl(
@@ -238,10 +299,10 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.RING_TIP
   )
 
-  rotations.ring_mcp = ringMcpCurl
-  rotations.ring_pip = ringPipCurl
-  rotations.ring_dip = ringDipCurl
-  rotations.ring_tip = ringDipCurl * 0.7
+  joints.ring_mcp = ringMcpCurl
+  joints.ring_pip = ringPipCurl
+  joints.ring_dip = ringDipCurl
+  joints.ring_tip = ringDipCurl * 0.7
 
   // PINKY FINGER
   const pinkyMcpCurl = calculateFingerCurl(
@@ -263,26 +324,34 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.PINKY_TIP
   )
 
-  rotations.pinky_mcp = pinkyMcpCurl
-  rotations.pinky_pip = pinkyPipCurl
-  rotations.pinky_dip = pinkyDipCurl
-  rotations.pinky_tip = pinkyDipCurl * 0.7
+  joints.pinky_mcp = pinkyMcpCurl
+  joints.pinky_pip = pinkyPipCurl
+  joints.pinky_dip = pinkyDipCurl
+  joints.pinky_tip = pinkyDipCurl * 0.7
 
-  // WRIST
-  // For now, set wrist to 0 (can be enhanced with wrist pose estimation)
-  rotations.wrist = 0
+  // WRIST - legacy single-axis rotation (kept for compatibility)
+  joints.wrist = 0
 
-  return rotations
+  // Calculate wrist orientation
+  const wristOrientation = calculateWristOrientation(landmarks, handedness)
+
+  return {
+    wristOrientation,
+    joints
+  }
 }
 
 /**
  * Get hand pose name based on joint angles (for debugging/visualization)
- * @param {Object} rotations - Joint rotations
+ * @param {Object} rotationData - Joint rotations data (can be old or new format)
  * @returns {string} - Pose name
  */
-export function detectHandPose(rotations) {
+export function detectHandPose(rotationData) {
+  // Handle both old format (flat object) and new format (with joints property)
+  const joints = rotationData.joints || rotationData
+
   const fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-  const curls = fingers.map(finger => rotations[`${finger}_mcp`] || 0)
+  const curls = fingers.map(finger => joints[`${finger}_mcp`] || 0)
 
   const avgCurl = curls.reduce((sum, curl) => sum + curl, 0) / curls.length
 

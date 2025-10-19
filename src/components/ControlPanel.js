@@ -100,7 +100,9 @@ export default function ControlPanel({
 
   // Get current rotation for the selected hand and joint
   const currentHandRotations = jointRotations[selectedHand] || {}
-  const currentRotation = currentHandRotations[selectedJoint] || 0
+  // Handle both old format (flat object) and new format (with joints property)
+  const joints = currentHandRotations.joints || currentHandRotations
+  const currentRotation = joints[selectedJoint] || 0
   const isManualMode = controlMode === 'manual'
   const isCameraMode = controlMode === 'camera'
 
