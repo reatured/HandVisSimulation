@@ -1,16 +1,33 @@
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { Hands } from '@mediapipe/hands'
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils'
+import { landmarksToJointRotations } from '../utils/handKinematics'
+import { MotionFilter } from '../utils/motionFilter'
+import { CalibrationManager } from '../utils/coordinateMapping'
 
-export default function HandTrackingCamera({ onHandResults }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, calibrationManager }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
+  const onJointRotationsRef = useRef(onJointRotations)
 
-  // Keep the ref updated without triggering re-initialization
+  // Initialize motion filter (persistent across renders)
+  const motionFilterRef = useRef(new MotionFilter({
+    alpha: 0.3, // Smoothing strength (lower = smoother but more lag)
+    maxVelocity: 5.0, // Max radians per second
+    enableSmoothing: true,
+    enableVelocityLimiting: true,
+    enableConstraints: true
+  }))
+
+  // Keep the refs updated without triggering re-initialization
   useEffect(() => {
     onHandResultsRef.current = onHandResults
   }, [onHandResults])
+
+  useEffect(() => {
+    onJointRotationsRef.current = onJointRotations
+  }, [onJointRotations])
 
   useEffect(() => {
     let hands = null
@@ -75,6 +92,29 @@ export default function HandTrackingCamera({ onHandResults }) {
       // Pass results to parent component if callback provided
       if (onHandResultsRef.current) {
         onHandResultsRef.current(results)
+      }
+
+      // Process landmarks to joint rotations
+      if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        // Get first detected hand
+        const landmarks = results.multiHandLandmarks[0]
+        const handedness = results.multiHandedness?.[0]?.label || 'Right'
+
+        // Convert landmarks to joint rotations
+        let rotations = landmarksToJointRotations(landmarks, handedness)
+
+        // Apply motion filtering
+        rotations = motionFilterRef.current.filter(rotations, Date.now())
+
+        // Apply calibration if available
+        if (calibrationManager) {
+          rotations = calibrationManager.applyCalibration(rotations)
+        }
+
+        // Send rotations to parent component
+        if (onJointRotationsRef.current) {
+          onJointRotationsRef.current(rotations)
+        }
       }
     }
 

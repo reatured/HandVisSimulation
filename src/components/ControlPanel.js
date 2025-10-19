@@ -82,7 +82,11 @@ export default function ControlPanel({
   onJointRotationChange,
   selectedModel,
   onModelChange,
-  models
+  models,
+  controlMode,
+  onControlModeChange,
+  onCalibrate,
+  calibrationStatus
 }) {
   // Get model path to determine joint availability
   const currentModelData = models.find(m => m.id === selectedModel)
@@ -90,6 +94,8 @@ export default function ControlPanel({
   const jointAvailability = MODEL_JOINT_AVAILABILITY[modelPath] || MODEL_JOINT_AVAILABILITY.default
 
   const currentRotation = jointRotations[selectedJoint] || 0
+  const isManualMode = controlMode === 'manual'
+  const isCameraMode = controlMode === 'camera'
 
   const fingers = [
     { name: 'thumb', label: 'Thumb' },
@@ -126,6 +132,131 @@ export default function ControlPanel({
         Hand Controls
       </div>
 
+      {/* Control Mode Toggle */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Control Mode
+        </label>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '10px'
+        }}>
+          <button
+            onClick={() => onControlModeChange('manual')}
+            style={{
+              padding: '12px',
+              fontSize: '14px',
+              backgroundColor: isManualMode
+                ? 'rgba(100, 200, 100, 0.9)'
+                : 'rgba(255, 255, 255, 0.15)',
+              color: 'white',
+              border: isManualMode ? '2px solid rgba(150, 255, 150, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontWeight: isManualMode ? 'bold' : '500',
+              textTransform: 'uppercase'
+            }}
+          >
+            Manual
+          </button>
+          <button
+            onClick={() => onControlModeChange('camera')}
+            style={{
+              padding: '12px',
+              fontSize: '14px',
+              backgroundColor: isCameraMode
+                ? 'rgba(100, 150, 255, 0.9)'
+                : 'rgba(255, 255, 255, 0.15)',
+              color: 'white',
+              border: isCameraMode ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontWeight: isCameraMode ? 'bold' : '500',
+              textTransform: 'uppercase'
+            }}
+          >
+            Camera
+          </button>
+        </div>
+      </div>
+
+      {/* Calibration Section - Only visible in camera mode */}
+      {isCameraMode && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '15px',
+          backgroundColor: 'rgba(100, 150, 255, 0.1)',
+          border: '1px solid rgba(100, 150, 255, 0.3)',
+          borderRadius: '8px'
+        }}>
+          <div style={{
+            color: 'white',
+            fontSize: '13px',
+            marginBottom: '10px',
+            fontWeight: '500'
+          }}>
+            Calibration
+          </div>
+          <div style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            marginBottom: '10px',
+            lineHeight: '1.4'
+          }}>
+            Hold your hand in a relaxed, open position and click calibrate.
+          </div>
+          <div style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
+          }}>
+            <button
+              onClick={onCalibrate}
+              style={{
+                flex: 1,
+                padding: '10px',
+                fontSize: '13px',
+                backgroundColor: 'rgba(100, 200, 100, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(150, 255, 150, 0.5)',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                textTransform: 'uppercase',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 200, 100, 1)'
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(100, 200, 100, 0.8)'
+              }}
+            >
+              Calibrate Now
+            </button>
+            <div style={{
+              fontSize: '11px',
+              color: calibrationStatus?.isCalibrated
+                ? 'rgba(100, 255, 100, 0.9)'
+                : 'rgba(255, 200, 100, 0.9)',
+              fontWeight: '500',
+              whiteSpace: 'nowrap'
+            }}>
+              {calibrationStatus?.isCalibrated ? '✓ Calibrated' : '⚠ Not calibrated'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Model Selector */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{
@@ -158,17 +289,18 @@ export default function ControlPanel({
         </select>
       </div>
 
-      {/* Joint Selector */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{
-          color: 'white',
-          fontSize: '14px',
-          display: 'block',
-          marginBottom: '12px',
-          fontWeight: '500'
-        }}>
-          Select Joint to Control
-        </label>
+      {/* Joint Selector - Only in manual mode */}
+      {isManualMode && (
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{
+            color: 'white',
+            fontSize: '14px',
+            display: 'block',
+            marginBottom: '12px',
+            fontWeight: '500'
+          }}>
+            Select Joint to Control
+          </label>
 
         {/* 5 Fingers Grid */}
         <div style={{
@@ -242,10 +374,12 @@ export default function ControlPanel({
         >
           Wrist
         </button>
-      </div>
+        </div>
+      )}
 
-      {/* Rotation Slider */}
-      <div style={{ marginBottom: '10px' }}>
+      {/* Rotation Slider - Only in manual mode */}
+      {isManualMode && (
+        <div style={{ marginBottom: '10px' }}>
         <label style={{
           color: 'white',
           fontSize: '14px',
@@ -280,7 +414,35 @@ export default function ControlPanel({
           <span>0</span>
           <span>1.5</span>
         </div>
-      </div>
+        </div>
+      )}
+
+      {/* Camera mode info */}
+      {isCameraMode && (
+        <div style={{
+          padding: '15px',
+          backgroundColor: 'rgba(100, 150, 255, 0.1)',
+          border: '1px solid rgba(100, 150, 255, 0.3)',
+          borderRadius: '8px',
+          marginBottom: '10px'
+        }}>
+          <div style={{
+            color: 'white',
+            fontSize: '13px',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            Camera Tracking Active
+          </div>
+          <div style={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '12px',
+            lineHeight: '1.4'
+          }}>
+            Move your hand in front of the camera. The hand model will follow your movements in real-time.
+          </div>
+        </div>
+      )}
 
       {/* Helper text */}
       <div style={{

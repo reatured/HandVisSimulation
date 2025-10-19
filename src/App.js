@@ -1,8 +1,9 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import HandTrackingCamera from './components/HandTrackingCamera'
 import Scene3D from './components/Scene3D'
 import ControlPanel from './components/ControlPanel'
 import DebugPanel from './components/DebugPanel'
+import { CalibrationManager } from './utils/coordinateMapping'
 
 // Available hand models configuration
 const HAND_MODELS = [
@@ -41,16 +42,32 @@ const createInitialJointRotations = () => {
 export default function App() {
   const [selectedModel, setSelectedModel] = useState('ability_left')
   const [handTrackingData, setHandTrackingData] = useState(null)
-  const [jointRotations, setJointRotations] = useState(createInitialJointRotations())
+  const [manualJointRotations, setManualJointRotations] = useState(createInitialJointRotations())
+  const [cameraJointRotations, setCameraJointRotations] = useState({})
   const [selectedJoint, setSelectedJoint] = useState('wrist')
+  const [controlMode, setControlMode] = useState('manual') // 'manual' or 'camera'
+  const [calibrationStatus, setCalibrationStatus] = useState({ isCalibrated: false })
+
+  // Initialize calibration manager (persistent across renders)
+  const calibrationManagerRef = useRef(new CalibrationManager())
+
+  // Update calibration status on mount
+  useEffect(() => {
+    setCalibrationStatus(calibrationManagerRef.current.getStatus())
+  }, [])
 
   const currentModel = useMemo(() =>
     HAND_MODELS.find(m => m.id === selectedModel),
     [selectedModel]
   )
 
+  // Determine which joint rotations to use based on control mode
+  const activeJointRotations = useMemo(() => {
+    return controlMode === 'camera' ? cameraJointRotations : manualJointRotations
+  }, [controlMode, cameraJointRotations, manualJointRotations])
+
   const handleJointRotationChange = useCallback((rotation) => {
-    setJointRotations(prev => ({
+    setManualJointRotations(prev => ({
       ...prev,
       [selectedJoint]: rotation
     }))
@@ -60,24 +77,53 @@ export default function App() {
     setHandTrackingData(results)
   }, [])
 
+  const handleCameraJointRotations = useCallback((rotations) => {
+    setCameraJointRotations(rotations)
+  }, [])
+
+  const handleControlModeChange = useCallback((mode) => {
+    setControlMode(mode)
+  }, [])
+
+  const handleCalibrate = useCallback(() => {
+    if (Object.keys(cameraJointRotations).length === 0) {
+      alert('No hand detected. Please show your hand to the camera first.')
+      return
+    }
+
+    const success = calibrationManagerRef.current.calibrate(cameraJointRotations)
+    if (success) {
+      setCalibrationStatus(calibrationManagerRef.current.getStatus())
+      console.log('Calibration successful!')
+    }
+  }, [cameraJointRotations])
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Scene3D
         selectedModel={currentModel}
         handTrackingData={handTrackingData}
-        jointRotations={jointRotations}
+        jointRotations={activeJointRotations}
       />
 
-      <HandTrackingCamera onHandResults={handleHandResults} />
+      <HandTrackingCamera
+        onHandResults={handleHandResults}
+        onJointRotations={handleCameraJointRotations}
+        calibrationManager={calibrationManagerRef.current}
+      />
 
       <ControlPanel
-        jointRotations={jointRotations}
+        jointRotations={activeJointRotations}
         selectedJoint={selectedJoint}
         onSelectedJointChange={setSelectedJoint}
         onJointRotationChange={handleJointRotationChange}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
         models={HAND_MODELS}
+        controlMode={controlMode}
+        onControlModeChange={handleControlModeChange}
+        onCalibrate={handleCalibrate}
+        calibrationStatus={calibrationStatus}
       />
 
       <DebugPanel handTrackingData={handTrackingData} />
