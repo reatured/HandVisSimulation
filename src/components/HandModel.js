@@ -11,7 +11,8 @@ function HandModelInner({
   side = 'left',
   jointRotations = {},
   gimbalRotation = { x: 0, y: 0, z: 0 },
-  cameraPosition = null
+  cameraPosition = null,
+  showAxes = true
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -27,6 +28,7 @@ function HandModelInner({
               position={[0, 0, 0]}
               gimbalRotation={gimbalRotation}
               cameraPosition={cameraPosition}
+              showAxes={showAxes}
             />
           )
         }
@@ -54,6 +56,7 @@ function HandModelInner({
               position={[0, 0, 0]}
               gimbalRotation={gimbalRotation}
               cameraPosition={cameraPosition}
+              showAxes={showAxes}
             />
           )
         }

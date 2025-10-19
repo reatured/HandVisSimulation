@@ -16,7 +16,8 @@ export default function URDFHandModel({
   jointRotations = {},
   position = [0, 0, 0],
   gimbalRotation = { x: 0, y: 0, z: 0 },
-  cameraPosition = null
+  cameraPosition = null,
+  showAxes = true
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -221,6 +222,8 @@ export default function URDFHandModel({
     return (
       <group ref={groupRef} position={position}>
         <primitive object={robot} />
+        {/* Local coordinate axes - shows hand orientation */}
+        {showAxes && <axesHelper args={[0.15]} />}
       </group>
     )
   }

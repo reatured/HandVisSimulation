@@ -94,7 +94,11 @@ export default function ControlPanel({
   showGimbals,
   onShowGimbalsChange,
   enableCameraPosition,
-  onEnableCameraPositionChange
+  onEnableCameraPositionChange,
+  swapHandControls,
+  onSwapHandControlsChange,
+  showAxes,
+  onShowAxesChange
 }) {
   // Get model path for the currently selected hand to determine joint availability
   const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
@@ -345,6 +349,51 @@ export default function ControlPanel({
         </div>
       </div>
 
+      {/* Switch Hand Controls - Always visible */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Hand Control Mapping
+        </label>
+        <button
+          onClick={() => onSwapHandControlsChange(!swapHandControls)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            backgroundColor: swapHandControls
+              ? 'rgba(100, 200, 100, 0.9)'
+              : 'rgba(100, 150, 255, 0.9)',
+            color: 'white',
+            border: swapHandControls
+              ? '2px solid rgba(150, 255, 150, 1)'
+              : '2px solid rgba(150, 200, 255, 1)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}
+        >
+          {swapHandControls ? '🔄 Hands Swapped' : '↔️ Normal Mapping'}
+        </button>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginTop: '6px',
+          lineHeight: '1.3'
+        }}>
+          {swapHandControls
+            ? 'Left hand controls right model, right hand controls left model'
+            : 'Left hand controls left model, right hand controls right model'}
+        </div>
+      </div>
+
       {/* Joint Selector - Only in manual mode */}
       {isManualMode && (
         <div style={{ marginBottom: '20px' }}>
@@ -568,6 +617,47 @@ export default function ControlPanel({
           lineHeight: '1.3'
         }}>
           Drag the 3D rotation handles in the scene to adjust hand orientation offset
+        </div>
+      </div>
+
+      {/* Coordinate Axes Toggle - Always visible */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Coordinate Axes
+        </label>
+        <button
+          onClick={() => onShowAxesChange(!showAxes)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            backgroundColor: showAxes
+              ? 'rgba(100, 200, 100, 0.9)'
+              : 'rgba(255, 100, 100, 0.9)',
+            color: 'white',
+            border: showAxes ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}
+        >
+          {showAxes ? '✓ Axes Visible' : '✗ Axes Hidden'}
+        </button>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginTop: '6px',
+          lineHeight: '1.3'
+        }}>
+          Shows coordinate system reference: Red=X, Green=Y, Blue=Z for scene and each hand
         </div>
       </div>
 

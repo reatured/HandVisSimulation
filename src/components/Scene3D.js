@@ -17,7 +17,8 @@ export default function Scene3D({
   onLeftGimbalChange,
   onRightGimbalChange,
   showGimbals,
-  enableCameraPosition
+  enableCameraPosition,
+  showAxes = true
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -71,9 +72,14 @@ export default function Scene3D({
         followCamera={false}
       />
 
+      {/* Global coordinate system axes - shows scene orientation */}
+      {showAxes && (
+        <axesHelper args={[0.5]} position={[0, -0.29, 0]} />
+      )}
+
       {/* Left Hand Model with Gimbal Control */}
       {leftModel && (
-        <group position={[-0.3, 0, 0]}>
+        <group position={[0.3, 0, 0]}>
           <GimbalControl
             position={[0, 0, 0]}
             rotation={safeLeftGimbal}
@@ -90,6 +96,7 @@ export default function Scene3D({
               jointRotations={safeLeftRotations}
               gimbalRotation={safeLeftGimbal}
               cameraPosition={enableCameraPosition ? leftHandPosition : null}
+              showAxes={showAxes}
             />
           </GimbalControl>
         </group>
@@ -97,7 +104,7 @@ export default function Scene3D({
 
       {/* Right Hand Model with Gimbal Control */}
       {rightModel && (
-        <group position={[0.3, 0, 0]}>
+        <group position={[-0.3, 0, 0]}>
           <GimbalControl
             position={[0, 0, 0]}
             rotation={safeRightGimbal}
@@ -114,6 +121,7 @@ export default function Scene3D({
               jointRotations={safeRightRotations}
               gimbalRotation={safeRightGimbal}
               cameraPosition={enableCameraPosition ? rightHandPosition : null}
+              showAxes={showAxes}
             />
           </GimbalControl>
         </group>

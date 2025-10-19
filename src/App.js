@@ -77,8 +77,14 @@ export default function App() {
   // Gimbal visibility toggle
   const [showGimbals, setShowGimbals] = useState(true)
 
+  // Coordinate axes visibility toggle (default: enabled for debugging)
+  const [showAxes, setShowAxes] = useState(true)
+
   // Camera position tracking toggle (default: disabled)
   const [enableCameraPosition, setEnableCameraPosition] = useState(false)
+
+  // Hand control swap toggle (swap which hand controls which model)
+  const [swapHandControls, setSwapHandControls] = useState(false)
 
   const [selectedJoint, setSelectedJoint] = useState('wrist')
   const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
@@ -122,6 +128,17 @@ export default function App() {
       }
     }
   }, [controlMode, cameraJointRotations, manualJointRotations])
+
+  // Apply hand control swap if enabled (ONLY swap joint rotations, NOT positions)
+  const finalJointRotations = useMemo(() => {
+    if (swapHandControls) {
+      return {
+        left: activeJointRotations.right,
+        right: activeJointRotations.left
+      }
+    }
+    return activeJointRotations
+  }, [swapHandControls, activeJointRotations])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
@@ -170,8 +187,8 @@ export default function App() {
         leftModel={currentLeftModel}
         rightModel={currentRightModel}
         handTrackingData={handTrackingData}
-        leftJointRotations={activeJointRotations.left}
-        rightJointRotations={activeJointRotations.right}
+        leftJointRotations={finalJointRotations.left}
+        rightJointRotations={finalJointRotations.right}
         leftHandPosition={controlMode === 'camera' ? cameraHandPositions.left : null}
         rightHandPosition={controlMode === 'camera' ? cameraHandPositions.right : null}
         leftHandGimbal={leftHandGimbal}
@@ -179,6 +196,7 @@ export default function App() {
         onLeftGimbalChange={setLeftHandGimbal}
         onRightGimbalChange={setRightHandGimbal}
         showGimbals={showGimbals}
+        showAxes={showAxes}
         enableCameraPosition={enableCameraPosition}
       />
 
@@ -209,8 +227,12 @@ export default function App() {
           calibrationStatus={calibrationStatus}
           showGimbals={showGimbals}
           onShowGimbalsChange={setShowGimbals}
+          showAxes={showAxes}
+          onShowAxesChange={setShowAxes}
           enableCameraPosition={enableCameraPosition}
           onEnableCameraPositionChange={setEnableCameraPosition}
+          swapHandControls={swapHandControls}
+          onSwapHandControlsChange={setSwapHandControls}
         />
       )}
 
