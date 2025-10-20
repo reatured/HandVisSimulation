@@ -359,8 +359,8 @@ export default function ControlPanel({
         </div>
       </div>
 
-      {/* Switch Hand Controls - Always visible */}
-      <div style={{ marginBottom: '12px' }}>
+      {/* Switch Hand Controls - Hidden for now */}
+      <div style={{ display: 'none' }}>
         <label style={{
           color: 'white',
           fontSize: '12px',
@@ -750,8 +750,8 @@ export default function ControlPanel({
         </button>
       </div>
 
-      {/* Mirror Mode Toggle - Always visible */}
-      <div style={{ marginBottom: '10px' }}>
+      {/* Mirror Mode Toggle - Hidden for now */}
+      <div style={{ display: 'none' }}>
         <button
           onClick={() => onMirrorModeChange(!mirrorMode)}
           style={{

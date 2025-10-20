@@ -65,7 +65,10 @@ export default function GimbalControl({
       disableScaling={true}
       disableSliders={true}
     >
-      {children}
+      {/* Apply actual rotation to children */}
+      <group rotation={[rotation.x, rotation.y, rotation.z]}>
+        {children}
+      </group>
     </PivotControls>
   )
 }

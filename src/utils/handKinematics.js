@@ -193,7 +193,11 @@ export function calculateWristOrientation(landmarks, handedness = 'Right') {
     x = -x
   }
 
-  console.log(`Wrist orientation (${handedness}): x=${x.toFixed(2)}, y=${y.toFixed(2)}, z=${z.toFixed(2)}`)
+  // Lock to Z-axis rotation only (1 DoF) - fingertips always point upward
+  x = 0
+  y = 0
+
+  console.log(`Wrist orientation (${handedness}): z=${z.toFixed(2)} [Z-axis only mode]`)
 
   return { x, y, z }
 }

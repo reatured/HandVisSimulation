@@ -73,8 +73,9 @@ export default function App() {
   })
 
   // Gimbal rotation offsets for each hand
-  const [leftHandGimbal, setLeftHandGimbal] = useState({ x: 0, y: 0, z: 0 })
-  const [rightHandGimbal, setRightHandGimbal] = useState({ x: 0, y: 0, z: 0 })
+  // Default: 90 degrees (π/2 radians) on X-axis for both hands
+  const [leftHandGimbal, setLeftHandGimbal] = useState({ x: -Math.PI / 2, y: 0, z: 0 })
+  const [rightHandGimbal, setRightHandGimbal] = useState({ x: -Math.PI / 2, y: 0, z: 0 })
 
   // Manual Z-axis rotation offsets for each hand (in radians)
   // Default: Left hand +90°, Right hand -90°
@@ -212,8 +213,8 @@ export default function App() {
 
   // Handler to reset both hand gimbals and wrist orientation to zero rotation
   const handleResetGimbals = useCallback(() => {
-    setLeftHandGimbal({ x: 0, y: 0, z: 0 })
-    setRightHandGimbal({ x: 0, y: 0, z: 0 })
+    setLeftHandGimbal(leftHandZRotation)
+    setRightHandGimbal(rightHandZRotation)
 
     // Reset wrist orientation in camera joint rotations
     setCameraJointRotations(prev => ({

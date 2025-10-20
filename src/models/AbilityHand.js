@@ -2,9 +2,8 @@ import { useLoader } from '@react-three/fiber'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 
 export default function AbilityHand({ side = 'left', jointRotations = {} }) {
-  // Handle both old format (flat object) and new format (with joints and wristOrientation)
+  // Handle both old format (flat object) and new format (with joints property)
   const joints = jointRotations.joints || jointRotations
-  const wristOrientation = jointRotations.wristOrientation || { x: 0, y: 0, z: 0 }
 
   // Extract individual joint rotations with defaults
   const wristRot = joints.wrist || 0
@@ -30,8 +29,8 @@ export default function AbilityHand({ side = 'left', jointRotations = {} }) {
 
   return (
     <group scale={[1, 1, 1]}>
-      {/* Wrist rotation wraps entire hand - now supports 3D rotation */}
-      <group rotation={[wristOrientation.x, wristOrientation.y, wristOrientation.z + wristRot]}>
+      {/* Wrist rotation - now handled by GimbalControl in Scene3D, legacy wristRot kept for backward compatibility */}
+      <group rotation={[0, 0, wristRot]}>
         <primitive object={wrist.scene.clone()} />
         <group position={[0.0240476665, 0.00378124745, 0.03232964923]} rotation={[3.14148426, 0.08848813, 3.14036612]}>
           <primitive object={palm.scene.clone()} />

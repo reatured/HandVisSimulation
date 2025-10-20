@@ -60,61 +60,21 @@ function GradientGround() {
   )
 }
 
-// Camera controller component to update camera position when mirror mode changes
-// Uses lerp (linear interpolation) for smooth transitions
+// Camera controller component - sets camera position when mirror mode changes
+// No lerping or restrictions - just instant position update on toggle
 function CameraController({ position }) {
   const { camera } = useThree()
-  const targetPosition = useRef(position)
-  const animating = useRef(false)
+  const previousPosition = useRef(position)
 
   useEffect(() => {
-    targetPosition.current = position
-    animating.current = true
-  }, [position])
-
-  // Animate camera position smoothly using lerp
-  useEffect(() => {
-    let animationFrameId
-
-    const animate = () => {
-      if (!animating.current) return
-
-      const current = camera.position
-      const target = targetPosition.current
-
-      // Lerp factor (0.1 = smooth, 1.0 = instant)
-      const lerpFactor = 0.1
-
-      // Linear interpolation for each axis
-      current.x += (target[0] - current.x) * lerpFactor
-      current.y += (target[1] - current.y) * lerpFactor
-      current.z += (target[2] - current.z) * lerpFactor
-
+    // Only update if position actually changed (mirror mode toggled)
+    if (previousPosition.current[0] !== position[0] ||
+        previousPosition.current[1] !== position[1] ||
+        previousPosition.current[2] !== position[2]) {
+      // Instantly set camera to new position (no lerping)
+      camera.position.set(...position)
       camera.updateProjectionMatrix()
-
-      // Stop animating when close enough to target
-      const distance = Math.sqrt(
-        Math.pow(target[0] - current.x, 2) +
-        Math.pow(target[1] - current.y, 2) +
-        Math.pow(target[2] - current.z, 2)
-      )
-
-      if (distance > 0.01) {
-        animationFrameId = requestAnimationFrame(animate)
-      } else {
-        // Snap to final position
-        camera.position.set(...target)
-        camera.updateProjectionMatrix()
-        animating.current = false
-      }
-    }
-
-    animate()
-
-    return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId)
-      }
+      previousPosition.current = position
     }
   }, [camera, position])
 
@@ -148,7 +108,7 @@ export default function Scene3D({
   // Calculate camera position based on mirror mode
   // Mirror ON: Front view (positive Z) - like looking in a mirror
   // Mirror OFF: Back view (negative Z) - looking from behind
-  const cameraPosition = mirrorMode ? [0.5, 0.5, 1] : [0.5, 0.5, -1]
+  const cameraPosition = mirrorMode ? [0, 0.5, 1] : [0, 0.5, -1]
 
   // Ensure we always have valid objects for joint rotations
   const safeLeftRotations = leftJointRotations || {}
@@ -158,13 +118,26 @@ export default function Scene3D({
   const safeLeftGimbal = leftHandGimbal || { x: 0, y: 0, z: 0 }
   const safeRightGimbal = rightHandGimbal || { x: 0, y: 0, z: 0 }
 
-  // Calculate wrist rotation - use {x: 0, y: 0, z: 0} if wrist rotation is disabled
+  // Camera wrist rotation - now applied at gimbal level (Level 2), not hand mesh group
   const leftWristRotation = disableWristRotation
     ? { x: 0, y: 0, z: 0 }
     : (safeLeftRotations.wristOrientation || { x: 0, y: 0, z: 0 })
   const rightWristRotation = disableWristRotation
     ? { x: 0, y: 0, z: 0 }
     : (safeRightRotations.wristOrientation || { x: 0, y: 0, z: 0 })
+
+  // Combine camera wrist rotation with manual gimbal rotation
+  // Camera rotation is the base, manual gimbal is applied on top
+  const leftCombinedRotation = {
+    x: leftWristRotation.x + safeLeftGimbal.x,
+    y: leftWristRotation.y + safeLeftGimbal.y,
+    z: leftWristRotation.z + safeLeftGimbal.z
+  }
+  const rightCombinedRotation = {
+    x: rightWristRotation.x + safeRightGimbal.x,
+    y: rightWristRotation.y + safeRightGimbal.y,
+    z: rightWristRotation.z + safeRightGimbal.z
+  }
   return (
     <Canvas
       camera={{ position: cameraPosition, fov: 50 }}
@@ -205,19 +178,13 @@ export default function Scene3D({
 
       {/* Left Hand Model with Gimbal Control */}
       {leftModel && (
-        <group
-          position={[0.3, 0, 0]}
-          rotation={[
-            leftWristRotation.x,
-            leftWristRotation.y,
-            leftWristRotation.z
-          ]}
-        >
-          {/* Axes rotate with wrist rotation from camera */}
+        <group position={[0.3, 0, 0]}>
+          {/* Hand mesh group rotation locked to [0, 0, 0] */}
+          {/* Local axes at hand mesh group level - does not rotate */}
           {showAxes && <axesHelper args={[0.15]} />}
           <GimbalControl
             position={[0, 0, 0]}
-            rotation={safeLeftGimbal}
+            rotation={leftCombinedRotation}
             onRotationChange={onLeftGimbalChange}
             visible={showGimbals}
             orbitControlsRef={orbitControlsRef}
@@ -238,19 +205,13 @@ export default function Scene3D({
 
       {/* Right Hand Model with Gimbal Control */}
       {rightModel && (
-        <group
-          position={[-0.3, 0, 0]}
-          rotation={[
-            rightWristRotation.x,
-            rightWristRotation.y,
-            rightWristRotation.z
-          ]}
-        >
-          {/* Axes rotate with wrist rotation from camera */}
+        <group position={[-0.3, 0, 0]}>
+          {/* Hand mesh group rotation locked to [0, 0, 0] */}
+          {/* Local axes at hand mesh group level - does not rotate */}
           {showAxes && <axesHelper args={[0.15]} />}
           <GimbalControl
             position={[0, 0, 0]}
-            rotation={safeRightGimbal}
+            rotation={rightCombinedRotation}
             onRotationChange={onRightGimbalChange}
             visible={showGimbals}
             orbitControlsRef={orbitControlsRef}

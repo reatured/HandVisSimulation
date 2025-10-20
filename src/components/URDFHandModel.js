@@ -124,6 +124,10 @@ export default function URDFHandModel({
     // Handle both old format (flat object) and new format (with joints property)
     const joints = jointRotations.joints || jointRotations
 
+    // Wrist orientation is now handled by GimbalControl in Scene3D
+    // Do not apply wrist rotation here to avoid double rotation
+    robot.rotation.set(0, 0, 0)
+
     // Apply position offset from camera if available
     if (cameraPosition) {
       groupRef.current.position.set(
