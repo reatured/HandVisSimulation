@@ -78,7 +78,7 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
 
       // Draw hand landmarks and connections
       if (results.multiHandLandmarks) {
-        for (const landmarks of results.multiHandLandmarks) {
+        results.multiHandLandmarks.forEach((landmarks, index) => {
           // Draw connections between landmarks
           drawConnectors(ctx, landmarks, Hands.HAND_CONNECTIONS, {
             color: '#00FF00',
@@ -91,7 +91,64 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
             lineWidth: 1,
             radius: 3
           })
-        }
+
+          // Draw hand label above the highest point
+          // Use handedness-based labels: Left = HAND 1, Right = HAND 2
+          const handedness = results.multiHandedness?.[index]?.label || 'Right'
+          const handLabel = handedness === 'Left' ? 'HAND 1' : 'HAND 2'
+
+          // Find the highest point (minimum y-coordinate) among all 21 landmarks
+          let highestY = landmarks[0].y
+          let highestX = landmarks[0].x
+          for (let i = 1; i < landmarks.length; i++) {
+            if (landmarks[i].y < highestY) {
+              highestY = landmarks[i].y
+              highestX = landmarks[i].x
+            }
+          }
+
+          // Convert normalized coordinates to canvas coordinates
+          const labelX = highestX * canvas.width
+          const labelY = highestY * canvas.height - 30 // Position 30px above highest point
+
+          // Save the current canvas state
+          ctx.save()
+
+          // Apply horizontal flip to compensate for CSS transform: scaleX(-1)
+          // This makes text readable when the canvas element itself is flipped
+          ctx.scale(-1, 1)
+          ctx.translate(-canvas.width, 0)
+
+          // Mirror the x-coordinate for the flipped coordinate system
+          const flippedLabelX = canvas.width - labelX
+
+          // Draw label with background
+          ctx.font = 'bold 20px Arial'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+
+          // Measure text for background
+          const textMetrics = ctx.measureText(handLabel)
+          const padding = 8
+          const bgWidth = textMetrics.width + padding * 2
+          const bgHeight = 28
+
+          // Draw semi-transparent background
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+          ctx.fillRect(
+            flippedLabelX - bgWidth / 2,
+            labelY - bgHeight / 2,
+            bgWidth,
+            bgHeight
+          )
+
+          // Draw text - different colors for each hand based on handedness
+          ctx.fillStyle = handedness === 'Left' ? '#00BFFF' : '#00FF00'
+          ctx.fillText(handLabel, flippedLabelX, labelY)
+
+          // Restore the canvas state
+          ctx.restore()
+        })
       }
 
       // Pass results to parent component if callback provided
@@ -134,6 +191,16 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
           // Apply calibration if available
           if (calibrationManager) {
             rotations = calibrationManager.applyCalibration(rotations)
+          }
+
+          // Apply hand-specific orientation corrections for right hand
+          // Right hand needs 180-degree flip to correct inverted orientation
+          if (handedness === 'Right' && rotations.wristOrientation) {
+            rotations.wristOrientation = {
+              x: -rotations.wristOrientation.x,
+              y: rotations.wristOrientation.y,
+              z: -rotations.wristOrientation.z
+            }
           }
 
           // Store rotations and positions by hand side

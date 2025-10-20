@@ -2,7 +2,9 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import HandTrackingCamera from './components/HandTrackingCamera'
 import Scene3D from './components/Scene3D'
 import ControlPanel from './components/ControlPanel'
+import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
+import { getShortestRotation } from './utils/handKinematics'
 
 // Detect if user is on mobile device
 const isMobileDevice = () => {
@@ -75,6 +77,7 @@ export default function App() {
   const [rightHandGimbal, setRightHandGimbal] = useState({ x: 0, y: 0, z: 0 })
 
   // Manual Z-axis rotation offsets for each hand (in radians)
+  // TESTING: All offsets removed to test camera-to-hand control with default conversion
   const [leftHandZRotation, setLeftHandZRotation] = useState(0)
   const [rightHandZRotation, setRightHandZRotation] = useState(0)
 
@@ -84,21 +87,30 @@ export default function App() {
   // Coordinate axes visibility toggle (default: enabled for debugging)
   const [showAxes, setShowAxes] = useState(true)
 
+  // Debug labels visibility toggle (default: disabled)
+  const [showDebugLabels, setShowDebugLabels] = useState(false)
+
   // Camera position tracking toggle (default: disabled)
   const [enableCameraPosition, setEnableCameraPosition] = useState(false)
 
+  // Mirror mode toggle (default: ON = front view like a mirror)
+  const [mirrorMode, setMirrorMode] = useState(true)
+
   // Hand control swap toggle (swap which hand controls which model)
   const [swapHandControls, setSwapHandControls] = useState(false)
+
+  // Wrist rotation toggle (disable wrist rotation to keep hand orientation fixed)
+  const [disableWristRotation, setDisableWristRotation] = useState(false)
 
   const [selectedJoint, setSelectedJoint] = useState('wrist')
   const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
   const [controlMode, setControlMode] = useState('camera') // 'manual' or 'camera' - default to camera
   const [calibrationStatus, setCalibrationStatus] = useState({ isCalibrated: false })
 
-  // Panel visibility states - camera preview always visible, control panel only on desktop, debug disabled
+  // Panel visibility states - camera preview always visible, control panel only on desktop, debug enabled
   const [showCameraPreview, setShowCameraPreview] = useState(true)
   const [showControlPanel, setShowControlPanel] = useState(!isMobile)
-  const [showDebugPanel] = useState(false) // Debug panel disabled
+  const [showDebugPanel] = useState(true) // Debug panel enabled
 
   // Initialize calibration manager (persistent across renders)
   const calibrationManagerRef = useRef(new CalibrationManager())
@@ -133,16 +145,18 @@ export default function App() {
     }
   }, [controlMode, cameraJointRotations, manualJointRotations])
 
-  // Apply hand control swap if enabled (ONLY swap joint rotations, NOT positions)
+  // Apply hand control swap based on mirror mode and manual swap toggle
+  // Mirror mode OFF automatically swaps hands (back view perspective)
   const finalJointRotations = useMemo(() => {
-    if (swapHandControls) {
+    const shouldSwap = !mirrorMode || swapHandControls
+    if (shouldSwap) {
       return {
         left: activeJointRotations.right,
         right: activeJointRotations.left
       }
     }
     return activeJointRotations
-  }, [swapHandControls, activeJointRotations])
+  }, [mirrorMode, swapHandControls, activeJointRotations])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
@@ -188,12 +202,30 @@ export default function App() {
   // Handlers for manual Z-axis rotation (90 degree increments)
   const handleLeftHandRotateZ = useCallback((direction) => {
     const increment = direction * (Math.PI / 2) // 90 degrees in radians
-    setLeftHandZRotation(prev => prev + increment)
+    setLeftHandZRotation(prev => getShortestRotation(prev, increment))
   }, [])
 
   const handleRightHandRotateZ = useCallback((direction) => {
     const increment = direction * (Math.PI / 2) // 90 degrees in radians
-    setRightHandZRotation(prev => prev + increment)
+    setRightHandZRotation(prev => getShortestRotation(prev, increment))
+  }, [])
+
+  // Handler to reset both hand gimbals and wrist orientation to zero rotation
+  const handleResetGimbals = useCallback(() => {
+    setLeftHandGimbal({ x: 0, y: 0, z: 0 })
+    setRightHandGimbal({ x: 0, y: 0, z: 0 })
+
+    // Reset wrist orientation in camera joint rotations
+    setCameraJointRotations(prev => ({
+      left: {
+        ...prev.left,
+        wristOrientation: { x: 0, y: 0, z: 0 }
+      },
+      right: {
+        ...prev.right,
+        wristOrientation: { x: 0, y: 0, z: 0 }
+      }
+    }))
   }, [])
 
   return (
@@ -212,9 +244,12 @@ export default function App() {
         onRightGimbalChange={setRightHandGimbal}
         showGimbals={showGimbals}
         showAxes={showAxes}
+        showDebugLabels={showDebugLabels}
         enableCameraPosition={enableCameraPosition}
         leftHandZRotation={leftHandZRotation}
         rightHandZRotation={rightHandZRotation}
+        disableWristRotation={disableWristRotation}
+        mirrorMode={mirrorMode}
       />
 
       <HandTrackingCamera
@@ -246,6 +281,8 @@ export default function App() {
           onShowGimbalsChange={setShowGimbals}
           showAxes={showAxes}
           onShowAxesChange={setShowAxes}
+          showDebugLabels={showDebugLabels}
+          onShowDebugLabelsChange={setShowDebugLabels}
           enableCameraPosition={enableCameraPosition}
           onEnableCameraPositionChange={setEnableCameraPosition}
           swapHandControls={swapHandControls}
@@ -254,6 +291,10 @@ export default function App() {
           rightHandZRotation={rightHandZRotation}
           onLeftHandRotateZ={handleLeftHandRotateZ}
           onRightHandRotateZ={handleRightHandRotateZ}
+          disableWristRotation={disableWristRotation}
+          onDisableWristRotationChange={setDisableWristRotation}
+          mirrorMode={mirrorMode}
+          onMirrorModeChange={setMirrorMode}
         />
       )}
 
@@ -282,6 +323,15 @@ export default function App() {
             {showCameraPreview ? '📹 Hide' : '📹 Show'} Camera
           </button>
         </div>
+      )}
+
+      {/* Debug Panel - shows euler angles and reset button */}
+      {showDebugPanel && (
+        <DebugPanel
+          leftHandRotation={finalJointRotations.left.wristOrientation || { x: 0, y: 0, z: 0 }}
+          rightHandRotation={finalJointRotations.right.wristOrientation || { x: 0, y: 0, z: 0 }}
+          onReset={handleResetGimbals}
+        />
       )}
     </div>
   )

@@ -1,140 +1,92 @@
-import { useEffect, useRef } from 'react'
-
-// MediaPipe Hand Landmark names
-const LANDMARK_NAMES = [
-  'WRIST',
-  'THUMB_CMC', 'THUMB_MCP', 'THUMB_IP', 'THUMB_TIP',
-  'INDEX_FINGER_MCP', 'INDEX_FINGER_PIP', 'INDEX_FINGER_DIP', 'INDEX_FINGER_TIP',
-  'MIDDLE_FINGER_MCP', 'MIDDLE_FINGER_PIP', 'MIDDLE_FINGER_DIP', 'MIDDLE_FINGER_TIP',
-  'RING_FINGER_MCP', 'RING_FINGER_PIP', 'RING_FINGER_DIP', 'RING_FINGER_TIP',
-  'PINKY_MCP', 'PINKY_PIP', 'PINKY_DIP', 'PINKY_TIP'
-]
-
-// Individual hand debug window component
-function HandDebugWindow({ handIndex, landmarks, handedness, leftOffset }) {
-  const scrollRef = useRef(null)
-
-  // Auto-scroll to bottom when data updates
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [landmarks])
-
-  const handLabel = handedness?.label || 'Unknown'
-  const handScore = handedness?.score || 0
-  const hasData = landmarks && landmarks.length > 0
+/**
+ * DebugPanel Component
+ * Displays euler angles for both hand mesh groups (wrist orientation from camera tracking)
+ */
+export default function DebugPanel({
+  leftHandRotation,
+  rightHandRotation,
+  onReset
+}) {
+  // Convert radians to degrees for display
+  const toDegrees = (radians) => (radians * 180 / Math.PI).toFixed(1)
 
   return (
     <div style={{
       position: 'absolute',
-      left: leftOffset,
-      bottom: 20,
-      width: '350px',
-      maxHeight: '80vh',
+      bottom: 10,
+      left: 10,
+      zIndex: 20,
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      border: '2px solid #00ff00',
+      color: 'white',
+      padding: '12px 16px',
       borderRadius: '8px',
-      color: '#00ff00',
       fontFamily: 'monospace',
-      fontSize: '11px',
-      zIndex: 100,
-      overflow: 'hidden',
-      display: 'flex',
-      flexDirection: 'column'
+      fontSize: '13px',
+      border: '1px solid rgba(255, 255, 255, 0.2)',
+      minWidth: '220px'
     }}>
-      {/* Header */}
       <div style={{
-        padding: '8px 12px',
-        borderBottom: '1px solid #00ff00',
-        backgroundColor: 'rgba(0, 255, 0, 0.1)',
         fontWeight: 'bold',
-        fontSize: '12px'
+        marginBottom: '10px',
+        fontSize: '14px',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+        paddingBottom: '6px'
       }}>
-        Hand {handIndex + 1}: {handLabel} {hasData && `(${(handScore * 100).toFixed(1)}%)`}
+        Hand Euler Angles
       </div>
 
-      {/* Content */}
-      <div
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '10px 12px'
-        }}
-      >
-        {!hasData ? (
-          <div style={{ color: '#ffaa00', fontStyle: 'italic' }}>
-            No hand detected
-          </div>
-        ) : (
-          <>
-            {/* Landmarks */}
-            {landmarks.map((landmark, idx) => (
-              <div key={idx} style={{
-                marginBottom: '4px',
-                paddingLeft: '8px',
-                lineHeight: '1.4'
-              }}>
-                <div style={{ color: '#ffff00' }}>
-                  [{idx}] {LANDMARK_NAMES[idx]}
-                </div>
-                <div style={{ paddingLeft: '12px', color: '#00ff00' }}>
-                  x: {landmark.x.toFixed(4)} |
-                  y: {landmark.y.toFixed(4)} |
-                  z: {landmark.z.toFixed(4)}
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-      </div>
-
-      {/* Footer with stats */}
-      {hasData && (
+      {/* Left Hand */}
+      <div style={{ marginBottom: '8px' }}>
         <div style={{
-          padding: '6px 12px',
-          borderTop: '1px solid #00ff00',
-          backgroundColor: 'rgba(0, 255, 0, 0.1)',
-          fontSize: '10px',
-          color: '#00ff00'
+          color: '#fbbf24',
+          fontWeight: '600',
+          marginBottom: '4px'
         }}>
-          Landmarks: {landmarks.length} | Position data only (no rotation)
+          LEFT HAND
         </div>
-      )}
+        <div style={{ paddingLeft: '8px', lineHeight: '1.6' }}>
+          <div>X: {toDegrees(leftHandRotation.x)}°</div>
+          <div>Y: {toDegrees(leftHandRotation.y)}°</div>
+          <div>Z: {toDegrees(leftHandRotation.z)}°</div>
+        </div>
+      </div>
+
+      {/* Right Hand */}
+      <div style={{ marginBottom: '10px' }}>
+        <div style={{
+          color: '#60d5f4',
+          fontWeight: '600',
+          marginBottom: '4px'
+        }}>
+          RIGHT HAND
+        </div>
+        <div style={{ paddingLeft: '8px', lineHeight: '1.6' }}>
+          <div>X: {toDegrees(rightHandRotation.x)}°</div>
+          <div>Y: {toDegrees(rightHandRotation.y)}°</div>
+          <div>Z: {toDegrees(rightHandRotation.z)}°</div>
+        </div>
+      </div>
+
+      {/* Reset Button - resets wrist rotation when tracking is lost */}
+      <button
+        onClick={onReset}
+        style={{
+          width: '100%',
+          padding: '8px',
+          backgroundColor: 'rgba(239, 68, 68, 0.9)',
+          color: 'white',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '12px',
+          fontFamily: 'monospace'
+        }}
+        onMouseOver={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 1)'}
+        onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'}
+      >
+        Reset Rotation
+      </button>
     </div>
-  )
-}
-
-export default function DebugPanel({ handTrackingData }) {
-  const hasData = handTrackingData && handTrackingData.multiHandLandmarks && handTrackingData.multiHandLandmarks.length > 0
-
-  // Get hand data for each hand (max 2 hands)
-  const hand1 = hasData ? handTrackingData.multiHandLandmarks[0] : null
-  const hand2 = hasData && handTrackingData.multiHandLandmarks.length > 1 ? handTrackingData.multiHandLandmarks[1] : null
-
-  const hand1edness = hasData ? handTrackingData.multiHandedness?.[0] : null
-  const hand2edness = hasData && handTrackingData.multiHandLandmarks.length > 1 ? handTrackingData.multiHandedness?.[1] : null
-
-  return (
-    <>
-      {/* Hand 1 Panel - Always visible on the left */}
-      <HandDebugWindow
-        handIndex={0}
-        landmarks={hand1}
-        handedness={hand1edness}
-        leftOffset={20}
-      />
-
-      {/* Hand 2 Panel - Only visible when second hand detected, positioned to the right of Hand 1 */}
-      {hand2 && (
-        <HandDebugWindow
-          handIndex={1}
-          landmarks={hand2}
-          handedness={hand2edness}
-          leftOffset={390}
-        />
-      )}
-    </>
   )
 }

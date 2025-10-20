@@ -189,6 +189,74 @@ Scene3D
                     └── robot.joints[...] (Articulated joints)
 ```
 
+### Coordinate System & Axes
+
+The application uses a **right-hand rule** coordinate system for both left and right hand models. This provides a consistent reference frame for all rotations and transformations.
+
+#### Right-Hand Rule (Three-Finger Rule)
+
+
+**Axis Directions (source: `handKinematics.js:170-179`):**
+
+- **🔴 Red (X-axis) = Thumb direction**
+  - Points laterally from palm toward the thumb side
+  - For right hand: points to the right
+  - For left hand: still follows right-hand rule (points to the left in world space)
+
+- **🔵 Blue (Z-axis) = Index finger direction**
+  - Points from wrist to fingertips (along the hand length)
+  - This is the "forward" or "up the hand" direction
+  - Used for Z-rotation offset (the 180° left hand offset rotates around this axis)
+
+- **🟢 Green (Y-axis) = Middle finger direction**
+  - Points perpendicular to the palm
+  - When palm faces down: points toward the user/camera
+  - When palm faces up: points away from the user/camera
+
+**Important:** Both left and right hand models use the **same right-hand rule**. This keeps the coordinate system consistent, making rotations easier to understand and debug.
+
+### Rotation Offset Configuration Report
+
+This table documents all rotation offsets at each hierarchy level for both left and right hands:
+
+| Level | Component | Script Location | Left Hand Default | Right Hand Default | Description |
+|-------|-----------|----------------|-------------------|-------------------|-------------|
+| **Level 1** | Hand mesh group | `Scene3D.js:86-92` (Left)<br>`Scene3D.js:119-125` (Right) | `rotation={[x, y, z]}`<br>from `wristOrientation` | `rotation={[x, y, z]}`<br>from `wristOrientation` | Wrist rotation from MediaPipe camera tracking. Default: `{x: 0, y: 0, z: 0}` when no tracking data. Initialized in `App.js:76-77` |
+| **Level 2** | GimbalControl | `Scene3D.js:96-113` (Left)<br>`Scene3D.js:129-146` (Right) | `rotation={x: 0, y: 0, z: 0}` | `rotation={x: 0, y: 0, z: 0}` | Interactive gimbal offset rotation. Initialized in `App.js:76-77`. Controlled via PivotControls drag handles. |
+| **Level 3** | HandModel wrapper | `HandModel.js:85`<br>(applied to both hands) | `rotation={[0, 0, 0]}`<br>**0° offset** | `rotation={[0, 0, 0]}`<br>**0° offset** | Manual Z-axis rotation offset. Both hands initialized with `0` in `App.js:81-82`. Incremented by ±90° via UI buttons. |
+| **Level 4** | URDF Robot joints | `URDFHandModel.js:140-167` | Individual joint angles<br>from `jointRotations` | Individual joint angles<br>from `jointRotations` | Individual finger joint rotations (MCP, PIP, DIP, TIP for each finger). Mapped via `mapUIJointToURDF()` and applied via `joint.setJointValue()`. Initialized to `0` for all joints in `App.js:35-46`. |
+
+#### Position Offsets (Non-Rotational)
+
+| Component | Script Location | Left Hand | Right Hand | Description |
+|-----------|----------------|-----------|------------|-------------|
+| Hand mesh group | `Scene3D.js:87` (Left)<br>`Scene3D.js:120` (Right) | `position={[0.3, 0, 0]}` | `position={[-0.3, 0, 0]}` | Base position offset in scene. Left hand at +0.3 on X-axis, right hand at -0.3 on X-axis. |
+| URDFHandModel | `URDFHandModel.js:129-136` | Camera position if enabled:<br>`{x, y, z}` from tracking<br>Default: `{0, 0, 0}` | Camera position if enabled:<br>`{x, y, z}` from tracking<br>Default: `{0, 0, 0}` | Optional camera position tracking. Controlled by `enableCameraPosition` toggle in `App.js:94`. Default: disabled. |
+
+#### Key Configuration Details
+
+**Left Hand Initialization (App.js):**
+- Base gimbal: `{x: 0, y: 0, z: 0}` (line 76)
+- Z-rotation offset: `0` (line 81) - **No initial offset**
+- Joint rotations: All zeros via `createInitialJointRotations()` (lines 60-62)
+- Wrist orientation: `{x: 0, y: 0, z: 0}` (default in Scene3D.js:89-91)
+
+**Right Hand Initialization (App.js):**
+- Base gimbal: `{x: 0, y: 0, z: 0}` (line 77)
+- Z-rotation offset: `0` (line 82) - **No initial offset**
+- Joint rotations: All zeros via `createInitialJointRotations()` (lines 60-62)
+- Wrist orientation: `{x: 0, y: 0, z: 0}` (default in Scene3D.js:122-124)
+
+**Note:** All rotation offsets are currently set to zero to test camera-to-hand control using only the default conversion algorithm from `handKinematics.js`. Both hands use the right-hand rule coordinate system with no manual adjustments.
+
+**Rotation Flow (Data → Rendering):**
+1. `App.js` maintains state for all rotation values
+2. State passed to `Scene3D.js` via props
+3. `Scene3D.js` applies Level 1 (wrist) and passes remaining to `GimbalControl`
+4. `GimbalControl` applies Level 2 (gimbal) and passes remaining to `HandModel`
+5. `HandModel.js` applies Level 3 (Z-offset) and passes remaining to `URDFHandModel`
+6. `URDFHandModel.js` applies Level 4 (individual joints) to URDF robot
+
 ### Rotation Stack Explanation
 
 1. **Wrist Rotation (Camera Tracking)**: Applied at the hand mesh group level, this rotation comes from MediaPipe's wrist orientation detection. The coordinate axes rotate with this to show the hand's orientation in space.

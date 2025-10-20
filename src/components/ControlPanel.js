@@ -102,7 +102,13 @@ export default function ControlPanel({
   leftHandZRotation,
   rightHandZRotation,
   onLeftHandRotateZ,
-  onRightHandRotateZ
+  onRightHandRotateZ,
+  showDebugLabels,
+  onShowDebugLabelsChange,
+  disableWristRotation,
+  onDisableWristRotationChange,
+  mirrorMode,
+  onMirrorModeChange
 }) {
   // Get model path for the currently selected hand to determine joint availability
   const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
@@ -769,6 +775,49 @@ export default function ControlPanel({
         </div>
       </div>
 
+      {/* Mirror Mode Toggle - Always visible */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          fontSize: '14px',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Mirror Mode
+        </label>
+        <button
+          onClick={() => onMirrorModeChange(!mirrorMode)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            backgroundColor: mirrorMode
+              ? 'rgba(100, 200, 255, 0.9)'
+              : 'rgba(255, 200, 100, 0.9)',
+            color: 'white',
+            border: mirrorMode ? '2px solid rgba(150, 220, 255, 1)' : '2px solid rgba(255, 220, 150, 1)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}
+        >
+          {mirrorMode ? '🪞 Front View (Mirror)' : '👁️ Back View'}
+        </button>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginTop: '6px',
+          lineHeight: '1.3'
+        }}>
+          {mirrorMode
+            ? 'Camera at front - your right hand controls right model (like a mirror)'
+            : 'Camera at back - your right hand controls left model (back view perspective)'}
+        </div>
+      </div>
+
       {/* Coordinate Axes Toggle - Always visible */}
       <div style={{ marginBottom: '20px' }}>
         <label style={{
@@ -807,6 +856,46 @@ export default function ControlPanel({
           lineHeight: '1.3'
         }}>
           Shows coordinate system reference: Red=X, Green=Y, Blue=Z for scene and each hand
+        </div>
+      </div>
+
+      {/* Debug Labels Toggle */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{
+          color: 'white',
+          display: 'block',
+          marginBottom: '8px',
+          fontWeight: '500'
+        }}>
+          Debug Labels
+        </label>
+        <button
+          onClick={() => onShowDebugLabelsChange(!showDebugLabels)}
+          style={{
+            width: '100%',
+            padding: '12px',
+            fontSize: '14px',
+            backgroundColor: showDebugLabels
+              ? 'rgba(100, 200, 100, 0.9)'
+              : 'rgba(255, 100, 100, 0.9)',
+            color: 'white',
+            border: showDebugLabels ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          }}
+        >
+          {showDebugLabels ? '✓ Labels Visible' : '✗ Labels Hidden'}
+        </button>
+        <div style={{
+          color: 'rgba(255, 255, 255, 0.6)',
+          fontSize: '11px',
+          marginTop: '6px',
+          lineHeight: '1.3'
+        }}>
+          Shows hand labels (LEFT/RIGHT HAND) and scene direction labels (FRONT/BACK/LEFT/RIGHT)
         </div>
       </div>
 
@@ -849,6 +938,49 @@ export default function ControlPanel({
             lineHeight: '1.3'
           }}>
             When enabled, hand models move in 3D space following your real hand position
+          </div>
+        </div>
+      )}
+
+      {/* Wrist Rotation Toggle - Only in camera mode */}
+      {isCameraMode && (
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{
+            color: 'white',
+            fontSize: '14px',
+            display: 'block',
+            marginBottom: '8px',
+            fontWeight: '500'
+          }}>
+            Wrist Rotation
+          </label>
+          <button
+            onClick={() => onDisableWristRotationChange(!disableWristRotation)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '14px',
+              backgroundColor: disableWristRotation
+                ? 'rgba(255, 100, 100, 0.9)'
+                : 'rgba(100, 200, 100, 0.9)',
+              color: 'white',
+              border: disableWristRotation ? '2px solid rgba(255, 150, 150, 1)' : '2px solid rgba(150, 255, 150, 1)',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              fontWeight: 'bold',
+              textTransform: 'uppercase'
+            }}
+          >
+            {disableWristRotation ? '✗ Wrist Disabled' : '✓ Wrist Enabled'}
+          </button>
+          <div style={{
+            color: 'rgba(255, 255, 255, 0.6)',
+            fontSize: '11px',
+            marginTop: '6px',
+            lineHeight: '1.3'
+          }}>
+            When disabled, only finger joints move while hand orientation stays fixed
           </div>
         </div>
       )}

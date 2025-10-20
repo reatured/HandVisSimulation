@@ -158,10 +158,26 @@ export function calculateWristOrientation(landmarks, handedness = 'Right') {
   palmRight.crossVectors(palmNormal, palmForward).normalize()
 
   // Build rotation matrix from these vectors
-  // In MediaPipe: Y is down, Z is toward camera, X is right
-  // We want: palm normal as up, palm forward as forward
+  // In MediaPipe: Y is down, Z is toward camera (negative = away), X is right
+  // In Three.js: Y is up, Z is toward viewer (positive = toward), X is right
+  //
+  // Default pose: middle finger up, palm facing camera
+  // - palmForward points from wrist toward middle finger (up in camera view)
+  // - palmRight points from pinky to index (right in camera view)
+  // - palmNormal points toward camera (out of palm)
+  //
+  // Target in Three.js:
+  // - Z-axis (blue) should point up = palmForward direction
+  // - X-axis (red) should point right = palmRight direction
+  // - Y-axis (green) should point toward user = palmNormal direction (flipped)
   const rotationMatrix = new THREE.Matrix4()
-  rotationMatrix.makeBasis(palmRight, palmNormal, palmForward.clone().negate())
+
+  // Map: X = palmRight, Y = -palmNormal (toward camera/user), Z = palmForward (up the hand)
+  rotationMatrix.makeBasis(
+    palmRight,                    // X-axis = right
+    palmNormal.clone().negate(),  // Y-axis = toward user (flip normal)
+    palmForward                   // Z-axis = up the hand (blue axis)
+  )
 
   // Extract Euler angles from rotation matrix
   const euler = new THREE.Euler()
@@ -171,7 +187,7 @@ export function calculateWristOrientation(landmarks, handedness = 'Right') {
   // MediaPipe's coordinate system needs adjustment for Three.js
   let { x, y, z } = euler
 
-  // Mirror for left hand
+  // Apply transformation only to left hand
   if (handedness === 'Left') {
     z = -z
     x = -x
@@ -360,6 +376,54 @@ export function detectHandPose(rotationData) {
   if (curls[1] < 0.3 && avgCurl > 1.5) return 'POINTING'
 
   return 'CUSTOM'
+}
+
+/**
+ * Normalize an angle to the range [-π, π]
+ * This prevents angles from accumulating beyond ±180° and ensures
+ * rotations always take the shortest path across the 180°/-180° boundary
+ * @param {number} angle - Angle in radians
+ * @returns {number} - Normalized angle in range [-π, π]
+ */
+export function normalizeAngle(angle) {
+  // Wrap angle to [-π, π] range
+  let normalized = angle % (2 * Math.PI)
+
+  // Handle wrap-around at boundaries
+  if (normalized > Math.PI) {
+    normalized -= 2 * Math.PI
+  } else if (normalized < -Math.PI) {
+    normalized += 2 * Math.PI
+  }
+
+  return normalized
+}
+
+/**
+ * Calculate the shortest rotation path from current angle to target angle
+ * When rotating across the 180°/-180° boundary, this ensures we take the short path
+ * @param {number} currentAngle - Current angle in radians
+ * @param {number} increment - Rotation increment in radians (e.g., π/2 for 90°)
+ * @returns {number} - New angle that takes the shortest rotation path
+ */
+export function getShortestRotation(currentAngle, increment) {
+  // Calculate the direct addition
+  const option1 = currentAngle + increment
+
+  // Calculate the alternative path (going the other way around the circle)
+  // If increment is positive, the alternative is negative and vice versa
+  const option2 = currentAngle + increment - (Math.sign(increment) * 2 * Math.PI)
+
+  // Normalize both options to [-π, π]
+  const normalized1 = normalizeAngle(option1)
+  const normalized2 = normalizeAngle(option2)
+
+  // Calculate angular distance for each option
+  const distance1 = Math.abs(normalized1 - currentAngle)
+  const distance2 = Math.abs(normalized2 - currentAngle)
+
+  // Return the option with shorter distance
+  return distance1 <= distance2 ? normalized1 : normalized2
 }
 
 /**
