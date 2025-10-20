@@ -77,24 +77,24 @@ export default function App() {
   const [rightHandGimbal, setRightHandGimbal] = useState({ x: 0, y: 0, z: 0 })
 
   // Manual Z-axis rotation offsets for each hand (in radians)
-  // TESTING: All offsets removed to test camera-to-hand control with default conversion
-  const [leftHandZRotation, setLeftHandZRotation] = useState(0)
-  const [rightHandZRotation, setRightHandZRotation] = useState(0)
+  // Default: Left hand +90°, Right hand -90°
+  const [leftHandZRotation, setLeftHandZRotation] = useState(Math.PI / 2)  // 90 degrees
+  const [rightHandZRotation, setRightHandZRotation] = useState(-Math.PI / 2)  // -90 degrees
 
   // Gimbal visibility toggle
-  const [showGimbals, setShowGimbals] = useState(true)
+  const [showGimbals, setShowGimbals] = useState(false)
 
   // Coordinate axes visibility toggle (default: enabled for debugging)
   const [showAxes, setShowAxes] = useState(true)
 
   // Debug labels visibility toggle (default: disabled)
-  const [showDebugLabels, setShowDebugLabels] = useState(false)
+  const [showDebugLabels, setShowDebugLabels] = useState(true)
 
   // Camera position tracking toggle (default: disabled)
   const [enableCameraPosition, setEnableCameraPosition] = useState(false)
 
-  // Mirror mode toggle (default: ON = front view like a mirror)
-  const [mirrorMode, setMirrorMode] = useState(true)
+  // Mirror mode toggle (default: OFF = back view perspective)
+  const [mirrorMode, setMirrorMode] = useState(false)
 
   // Hand control swap toggle (swap which hand controls which model)
   const [swapHandControls, setSwapHandControls] = useState(false)

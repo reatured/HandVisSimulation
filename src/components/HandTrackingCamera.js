@@ -12,6 +12,9 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
   const onJointRotationsRef = useRef(onJointRotations)
   const onHandPositionsRef = useRef(onHandPositions)
 
+  // State to track horizontal flip
+  const [isFlipped, setIsFlipped] = useState(false)
+
   // Initialize motion filter (persistent across renders)
   const motionFilterRef = useRef(new MotionFilter({
     alpha: 0.3, // Smoothing strength (lower = smoother but more lag)
@@ -295,18 +298,27 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
     )
   }
 
+  // Toggle flip state when preview is clicked
+  const handlePreviewClick = () => {
+    setIsFlipped(prev => !prev)
+  }
+
   return (
-    <div style={{
-      position: 'absolute',
-      top: 20,
-      left: 20,
-      width: '320px',
-      height: '240px',
-      border: '2px solid white',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      zIndex: 10
-    }}>
+    <div
+      onClick={handlePreviewClick}
+      style={{
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        width: '320px',
+        height: '240px',
+        border: '2px solid white',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        zIndex: 10,
+        cursor: 'pointer'
+      }}
+    >
       <video
         ref={videoRef}
         autoPlay
@@ -315,7 +327,7 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
         style={{
           width: '100%',
           height: '100%',
-          transform: 'scaleX(-1)'
+          transform: isFlipped ? 'scaleX(1)' : 'scaleX(-1)'
         }}
       />
       <canvas
@@ -326,7 +338,7 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
           left: 0,
           width: '100%',
           height: '100%',
-          transform: 'scaleX(-1)'
+          transform: isFlipped ? 'scaleX(1)' : 'scaleX(-1)'
         }}
       />
     </div>
