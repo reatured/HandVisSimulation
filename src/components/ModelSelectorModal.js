@@ -3,15 +3,15 @@ import { memo } from 'react'
 // Map model paths to their preview images
 const getModelImage = (modelPath) => {
   const imageMap = {
-    'ability_hand': '/assets/doc/gallery/ability_rt.webp',
-    'shadow_hand': '/assets/doc/gallery/shadow_rt.webp',
-    'allegro_hand': '/assets/doc/gallery/allegro_rt.webp',
-    'inspire_hand': '/assets/doc/gallery/inspire_rt.webp',
-    'leap_hand': '/assets/doc/gallery/leap_rt.webp',
-    'schunk_hand': '/assets/doc/gallery/svh_rt.webp',
-    'barrett_hand': '/assets/doc/gallery/barrett-collision.png',
-    'dclaw_gripper': '/assets/doc/gallery/dclaw_rt.webp',
-    'panda_gripper': '/assets/doc/gallery/panda_rt.webp'
+    'ability_hand': './assets/doc/gallery/ability_rt.webp',
+    'shadow_hand': './assets/doc/gallery/shadow_rt.webp',
+    'allegro_hand': './assets/doc/gallery/allegro_rt.webp',
+    'inspire_hand': './assets/doc/gallery/inspire_rt.webp',
+    'leap_hand': './assets/doc/gallery/leap_rt.webp',
+    'schunk_hand': './assets/doc/gallery/svh_rt.webp',
+    'barrett_hand': './assets/doc/gallery/bhand_rt.webp',
+    'dclaw_gripper': './assets/doc/gallery/dclaw_rt.webp',
+    'panda_gripper': './assets/doc/gallery/panda_rt.webp'
   }
   return imageMap[modelPath] || null
 }
