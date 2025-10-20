@@ -56,6 +56,16 @@ const HAND_MODELS = [
 const MODEL_DISPLAY_ORDER = [
   ['ability_left', true],
   ['ability_right', true],
+  ['linker_o6_left', true],
+  ['linker_o6_right', true],
+  ['linker_o7_left', true],
+  ['linker_o7_right', true],
+  ['linker_l10_left', true],
+  ['linker_l10_right', true],
+  ['linker_l20_left', true],
+  ['linker_l20_right', true],
+  ['linker_l20pro_right', true],
+  ['linker_l30_right', true],
   ['shadow_left', true],
   ['shadow_right', true],
   ['allegro_left', true],
@@ -71,20 +81,13 @@ const MODEL_DISPLAY_ORDER = [
   ['panda', true],
   ['linker_l6_left', true],
   ['linker_l6_right', true],
-  ['linker_l10_left', true],
-  ['linker_l10_right', true],
-  ['linker_l20_left', true],
-  ['linker_l20_right', true],
-  ['linker_l20pro_right', true],
+  
   ['linker_l21_left', true],
   ['linker_l21_right', true],
   ['linker_l25_left', true],
   ['linker_l25_right', true],
   ['linker_l30_right', true],
-  ['linker_o6_left', true],
-  ['linker_o6_right', true],
-  ['linker_o7_left', true],
-  ['linker_o7_right', true],
+
 ]
 
 // Initialize joint rotations for all 21 joints
@@ -378,7 +381,7 @@ export default function App() {
           selectedRightModel={selectedRightModel}
           onLeftModelChange={setSelectedLeftModel}
           onRightModelChange={setSelectedRightModel}
-          models={HAND_MODELS}
+          models={visibleModels}
           controlMode={controlMode}
           onControlModeChange={handleControlModeChange}
           onCalibrate={handleCalibrate}
