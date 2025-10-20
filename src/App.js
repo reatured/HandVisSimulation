@@ -170,7 +170,7 @@ export default function App() {
   // Panel visibility states - camera preview always visible, control panel only on desktop, debug enabled
   const [showCameraPreview, setShowCameraPreview] = useState(true)
   const [showControlPanel, setShowControlPanel] = useState(!isMobile)
-  const [showDebugPanel] = useState(true) // Debug panel enabled
+  const [showDebugPanel, setShowDebugPanel] = useState(false) // Debug panel toggle
 
   // Robot references for applying material changes
   const leftRobotRef = useRef(null)
@@ -228,14 +228,18 @@ export default function App() {
   // Mirror mode OFF automatically swaps hands (back view perspective)
   const finalJointRotations = useMemo(() => {
     const shouldSwap = !mirrorMode || swapHandControls
-    if (shouldSwap) {
-      return {
-        left: activeJointRotations.right,
-        right: activeJointRotations.left
-      }
-    }
-    return activeJointRotations
-  }, [mirrorMode, swapHandControls, activeJointRotations])
+    const result = shouldSwap ? {
+      left: activeJointRotations.right,
+      right: activeJointRotations.left
+    } : activeJointRotations
+
+    // Debug logging
+    console.log('App.js - finalJointRotations:', result)
+    console.log('App.js - controlMode:', controlMode)
+    console.log('App.js - activeJointRotations:', activeJointRotations)
+
+    return result
+  }, [mirrorMode, swapHandControls, activeJointRotations, controlMode])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
@@ -435,13 +439,48 @@ export default function App() {
         </div>
       )}
 
-      {/* Debug Panel - shows euler angles and reset button */}
+      {/* Debug Panel - shows joint rotations and reset button */}
       {showDebugPanel && (
         <DebugPanel
           leftHandRotation={finalJointRotations.left.wristOrientation || { x: 0, y: 0, z: 0 }}
           rightHandRotation={finalJointRotations.right.wristOrientation || { x: 0, y: 0, z: 0 }}
+          jointRotations={finalJointRotations}
           onReset={handleResetGimbals}
+          onClose={() => setShowDebugPanel(false)}
         />
+      )}
+
+      {/* Open Debug Panel Button - shows when panel is closed */}
+      {!showDebugPanel && (
+        <button
+          onClick={() => setShowDebugPanel(true)}
+          style={{
+            position: 'absolute',
+            bottom: '10px',
+            left: '10px',
+            padding: '8px 12px',
+            fontSize: '11px',
+            backgroundColor: 'rgba(100, 150, 255, 0.9)',
+            color: 'white',
+            border: '1px solid rgba(150, 200, 255, 0.5)',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontFamily: 'monospace',
+            zIndex: 20,
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 1)'
+            e.currentTarget.style.borderColor = 'rgba(150, 200, 255, 0.8)'
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.9)'
+            e.currentTarget.style.borderColor = 'rgba(150, 200, 255, 0.5)'
+          }}
+        >
+          Show Debug
+        </button>
       )}
     </div>
   )
