@@ -1,112 +1,155 @@
-# 🖐️ HandVisSimulation - Real-Time 3D Hand Tracking & Visualization
+# HandVisSimulation
 
-[![React](https://img.shields.io/badge/React-18+-61dafb?logo=react&logoColor=white)](https://reactjs.org/)
-[![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?logo=three.js)](https://threejs.org/)
-[![MediaPipe](https://img.shields.io/badge/MediaPipe-Hands-00C853?logo=google)](https://mediapipe.dev/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+**HandVisSimulation** is a real-time 3D hand visualization and control interface that runs entirely in the browser. It uses your webcam to track hand movements via MediaPipe and maps them onto various robotic hand models in a Three.js scene. The application serves as a powerful tool for visualizing hand kinematics, testing control interfaces, and exploring human-robot interaction concepts.
 
-**Real-time 3D hand tracking and robotic hand simulation in the browser.** Built with React Three Fiber, Three.js, and MediaPipe Hands for computer vision research, robotics visualization, AR/VR development, and interactive motion capture demos.
+[![Deploy to GitHub Pages](https://github.com/Lingyi-Zhou/HandVisSimulation/actions/workflows/deploy.yml/badge.svg)](https://github.com/Lingyi-Zhou/HandVisSimulation/actions/workflows/deploy.yml)
 
-[🚀 Live Demo](#) | [📖 Documentation](#setup) | [🤝 Contributing](#)
+**Live Demo:** [https://lingyi-zhou.github.io/HandVisSimulation/](https://lingyi-zhou.github.io/HandVisSimulation/)
 
----
+![HandVisSimulation Demo](./public/demo.png)
 
-## 🌟 What is HandVisSimulation?
+## Key Features
 
-HandVisSimulation is a **browser-based 3D hand tracking and visualization platform** that combines:
-- 🎥 **Real-time webcam hand detection** using Google's MediaPipe Hands AI model
-- 🤖 **Multiple robotic hand models** (Ability Hand, Shadow Hand, Allegro Hand, etc.)
-- 🎨 **Interactive WebGL 3D rendering** with React Three Fiber
-- 📊 **Hand landmark visualization** overlayed on live video feed
-- 🔧 **Extensible architecture** for custom hand models and sensors
+-   **Real-time Hand Tracking:** Utilizes MediaPipe Hand Landmarker to detect and track 21 keypoints on each hand from a standard webcam feed.
+-   **Multiple Robot Hand Models:** Supports a variety of popular robotic hand models, with separate selections for the left and right hands.
+-   **Interactive 3D Scene:** The scene, built with React Three Fiber, allows users to pan, zoom, and rotate the camera for optimal viewing.
+-   **Dual Control Modes:**
+    -   **Camera Mode:** Directly maps your hand's orientation and finger bends to the 3D models.
+    -   **Manual Mode:** Use sliders to control individual joint angles for precise posing and testing.
+-   **Advanced Orientation Controls:**
+    -   **Interactive Gimbals:** Directly manipulate the orientation of each hand model in the 3D scene.
+    -   **Z-Axis Rotation:** Apply 90-degree rotational offsets to align the models with your hands.
+    -   **Wrist Lock:** Freeze the wrist's orientation while still allowing finger movements.
+-   **Calibration System:** Calibrate the system by setting a neutral "zero" pose, which helps correct for camera angle and initial hand orientation.
+-   **Customizable View & Behavior:**
+    -   **Mirror Mode:** Switch between a front-facing (mirrored) and back-facing camera perspective.
+    -   **Hand Swapping:** Swap which detected hand controls the left or right 3D model.
+    -   **Position Tracking:** Optionally move the 3D models based on the hand's position in the camera view.
+    -   **Visibility Toggles:** Show or hide gimbals, coordinate axes, and debug labels.
+-   **Real-time Debug Panel:** Displays live Euler rotation data for each hand and provides a quick reset button.
 
-Perfect for:
-- 🔬 **Researchers** exploring human-robot interaction and motion capture
-- 🤖 **Robotics engineers** visualizing hand kinematics and control systems
-- 🎓 **Educators** teaching computer vision, 3D graphics, or biomechanics
-- 💻 **Developers** building AR/VR hand tracking applications
-- 🎮 **Game developers** prototyping hand gesture controls
+## How to Use
 
----
+1.  **Allow Camera Access:** When you first open the application, your browser will ask for permission to use the camera. Please allow it.
+2.  **Show Your Hands:** Position one or both hands in front of the camera. You should see the 3D models begin to mimic your movements.
 
-## ✨ Key Features
+### Control Panel
 
-### 🤖 Multiple Robotic Hand Models
-Support for 9+ professional robotic hand models with accurate URDF kinematics:
-- **Ability Hand** - Advanced prosthetic hand
-- **Shadow Hand** - Dexterous anthropomorphic hand
-- **Allegro Hand** - Research-grade robotic hand
-- **Inspire Hand** - Open-source prosthetic design
-- **Leap Hand** - High-DOF manipulation
-- **Schunk Hand**, **Barrett Hand**, **Panda Gripper**, **DClaw Gripper**
+The control panel on the left allows you to customize the simulation:
 
-### 📹 Real-Time Hand Tracking
-- **MediaPipe Hands** integration for 21-point hand landmark detection
-- **60 FPS tracking** with sub-100ms latency
-- **Multi-hand support** - track both hands simultaneously
-- Works with any standard **webcam** or USB camera
-
-### 🎨 Interactive 3D Visualization
-- **WebGL-powered** rendering with Three.js
-- **React Three Fiber** declarative 3D components
-- **OrbitControls** - rotate, pan, zoom with mouse/touch
-- **Real-time lighting** and shadows for realistic rendering
-- **Responsive design** - works on desktop, tablet, mobile
-
-### 🔧 Developer-Friendly Architecture
-- **Modular component design** - easy to extend with new models
-- **Async model loading** with React Suspense
-- **URDF + GLB support** for robotic models
-- **Clean separation** of tracking, visualization, and UI logic
-- **TypeScript-ready** codebase structure
+-   **Control Mode:**
+    -   `Camera`: The 3D models are controlled by the webcam tracking.
+    -   `Manual`: The 3D models are controlled by the joint sliders below.
+-   **Model Selection:** Use the dropdowns to choose different robotic hand models for the left and right sides.
+-   **Calibration:**
+    -   Hold your hand in a flat, neutral pose facing the camera.
+    -   Click **Calibrate** to set this as the "zero" orientation. All subsequent camera-tracked rotations will be relative to this pose.
+-   **View Options:**
+    -   `Show Gimbals`: Toggles the visibility of the interactive rotation gimbals around each hand.
+    -   `Show Axes`: Toggles the coordinate axes for each hand model.
+    -   `Show Debug Labels`: Toggles text labels in the 3D scene.
+-   **Tracking Options:**
+    -   `Mirror Mode`: Flips the camera view horizontally. Turn this ON for a "selfie" or front-facing view. Turn it OFF for a back-facing view (where your right hand controls the right model on the right side of the screen).
+    -   `Swap Hand Controls`: Manually swaps the input, so your left hand controls the right model and vice-versa.
+    -   `Enable Camera Position`: If enabled, the 3D models will move within the scene to match your hands' X/Y position in the camera frame.
+    -   `Disable Wrist Rotation`: Locks the orientation of the wrists, allowing only finger movements to be tracked.
+-   **Manual Orientation:**
+    -   Use the `⟲` and `⟳` buttons next to each hand model selector to apply a 90-degree rotation around the model's Z-axis.
 
 ## Project Structure
 
 ```
-HandVisSimulation/
-├── src/
-│   ├── App.js                    # Main application orchestrator
-│   ├── index.js                  # Application entry point
-│   │
-│   ├── components/               # Reusable UI and 3D components
-│   │   ├── HandTrackingCamera.js # Camera feed + MediaPipe hand tracking
-│   │   ├── Scene3D.js            # Three.js canvas and lighting setup
-│   │   ├── HandModel.js          # Router/factory for hand models
-│   │   └── ModelSelector.js      # Bottom UI selector for models
-│   │
-│   └── models/                   # Hand-specific 3D model implementations
-│       ├── AbilityHand.js        # Ability Hand model (fully implemented)
-│       └── InspireHand.js        # Inspire Hand model (basic implementation)
-│
+/
+├── .github/workflows/         # GitHub Actions for CI/CD
+│   └── deploy.yml             # Workflow to build and deploy to GitHub Pages
 ├── public/
-│   └── assets/
-│       └── robots/
-│           └── hands/            # Hand model assets (URDF, GLB meshes)
-│               ├── ability_hand/
-│               ├── inspire_hand/
-│               ├── shadow_hand/
-│               ├── allegro_hand/
-│               ├── leap_hand/
-│               ├── schunk_hand/
-│               ├── barrett_hand/
-│               ├── dclaw_gripper/
-│               └── panda_gripper/
-│
-└── package.json
+│   ├── assets/robots/hands/   # GLB/GLTF 3D models
+│   │   ├── ability_hand/
+│   │   ├── allegro_hand/
+│   │   ├── barrett_hand/
+│   │   ├── dclaw_gripper/
+│   │   ├── inspire_hand/
+│   │   ├── leap_hand/
+│   │   ├── panda_gripper/
+│   │   ├── schunk_hand/
+│   │   └── shadow_hand/
+│   └── index.html             # Main HTML file
+├── src/
+│   ├── components/            # React components
+│   │   ├── ControlPanel.js    # UI for controlling the simulation
+│   │   ├── DebugPanel.js      # Displays real-time orientation data
+│   │   ├── HandTrackingCamera.js # Handles webcam feed and MediaPipe integration
+│   │   └── Scene3D.js         # Manages the Three.js scene and 3D models
+│   ├── utils/                 # Helper functions and classes
+│   │   ├── coordinateMapping.js # Maps hand landmarks to joint rotations
+│   │   └── handKinematics.js  # Kinematic calculations
+│   ├── App.js                 # Main application component, manages state
+│   └── index.js               # Application entry point
+├── package.json
+└── README.md
 ```
 
 ## Component Overview
 
-### Core Components
+-   **`App.js`**: The root component that manages the entire application's state, including control modes, selected models, joint rotations, and all UI toggles. It orchestrates data flow between the camera, UI, and 3D scene.
+-   **`HandTrackingCamera.js`**: A headless component that initializes the webcam, runs the MediaPipe Hand Landmarker, processes the results, and passes tracking data up to `App.js`.
+-   **`Scene3D.js`**: Renders the 3D environment, including the hand models, gimbals, and axes. It receives joint rotation data and applies it to the corresponding models. It also handles user interaction with the 3D scene (camera controls, gimbal manipulation).
+-   **`ControlPanel.js`**: The main UI panel containing all the toggles, sliders, and buttons that allow the user to configure the simulation.
+-   **`DebugPanel.js`**: A simple UI overlay that displays the current Euler rotation angles of the wrists and provides a button to reset the orientation.
+-   **`coordinateMapping.js`**: Contains the core logic for converting the 21 hand landmarks from MediaPipe into a standardized set of joint rotations. It also includes the `CalibrationManager` class.
+-   **`handKinematics.js`**: Provides utility functions for kinematic calculations, such as calculating angles between vectors and ensuring smooth rotations.
 
-**`App.js`**
-- Main application state management
-- Coordinates data flow between components
-- Manages selected model and hand tracking data
+## 3D Scene Hierarchy
 
-**`HandTrackingCamera.js`**
-- Initializes and manages webcam access
-- Runs MediaPipe Hands model for hand detection
+The 3D scene is structured to allow for multiple layers of rotation, providing flexible control over the hand models' orientation.
+
+1.  **Scene Origin**: The root of the 3D world.
+2.  **Hand Group (`LeftHandGroup` / `RightHandGroup`)**: A group that contains the gimbal and the hand model. Its position can be updated if `Enable Camera Position` is active.
+3.  **Gimbal Rotation**: An invisible pivot point that applies the interactive gimbal's rotation (`leftHandGimbal` / `rightHandGimbal`). This is the outermost rotation layer controlled by the user dragging the gimbals.
+4.  **Manual Z-Axis Rotation**: Another pivot that applies the 90-degree rotational offsets (`leftHandZRotation` / `rightHandZRotation`).
+5.  **Hand Model**: The final loaded GLTF model, which has its internal joints rotated based on the active control mode (`camera` or `manual`). The wrist bone's orientation is controlled by the camera tracking data.
+
+This layered approach ensures that manual gimbal adjustments, Z-axis offsets, and real-time wrist tracking can all be applied independently and predictably.
+
+## Deployment
+
+This project is configured for continuous deployment to **GitHub Pages**. The workflow is defined in `.github/workflows/deploy.yml`. On every push to the `main` branch, the following steps are executed automatically:
+
+1.  The code is checked out.
+2.  Node.js and project dependencies (`npm install`) are set up.
+3.  A production build is created (`npm run build`).
+4.  The contents of the `build` directory are deployed to the `gh-pages` branch, making the latest version live.
+
+## Local Development
+
+To run this project locally, follow these steps:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Lingyi-Zhou/HandVisSimulation.git
+    cd HandVisSimulation
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Start the development server:**
+    ```bash
+    npm start
+    ```
+
+    This will open the application in your default browser at `http://localhost:3000`.
+
+## Technologies Used
+
+-   **React:** For building the user interface and managing component state.
+-   **Three.js & React Three Fiber:** For creating and managing the 3D scene.
+-   **Drei:** A collection of useful helpers for React Three Fiber.
+-   **MediaPipe:** For real-time hand tracking from the webcam.
+-   **React-dat-gui:** For the control panel UI.
+-   **GitHub Actions:** For automated deployment to GitHub Pages.
 - Draws hand landmarks on canvas overlay
 - Provides hand tracking results via callback
 

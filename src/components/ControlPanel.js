@@ -1,4 +1,5 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
+import ModelSelectorModal from './ModelSelectorModal'
 
 // Joint Button Component - defined outside to prevent recreation on every render
 const JointButton = memo(({ jointName, label, isAvailable, selectedJoint, onSelectedJointChange }) => {
@@ -110,6 +111,10 @@ export default function ControlPanel({
   mirrorMode,
   onMirrorModeChange
 }) {
+  // State for modal visibility
+  const [isLeftModalOpen, setIsLeftModalOpen] = useState(false)
+  const [isRightModalOpen, setIsRightModalOpen] = useState(false)
+
   // Get model path for the currently selected hand to determine joint availability
   const currentModelId = selectedHand === 'left' ? selectedLeftModel : selectedRightModel
   const currentModelData = models.find(m => m.id === currentModelId)
@@ -306,25 +311,38 @@ export default function ControlPanel({
           }}>
             Left
           </label>
-          <select
-            value={selectedLeftModel}
-            onChange={(e) => onLeftModelChange(e.target.value)}
+          <button
+            onClick={() => setIsLeftModalOpen(true)}
             style={{
               width: '100%',
-              padding: '6px',
+              padding: '8px 12px',
               fontSize: '11px',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
+              backgroundColor: 'rgba(255, 150, 100, 0.2)',
+              border: '1px solid rgba(255, 200, 150, 0.5)',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              color: 'white',
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              transition: 'all 0.2s',
+              fontWeight: '500'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.3)'
+              e.currentTarget.style.borderColor = 'rgba(255, 200, 150, 0.8)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.2)'
+              e.currentTarget.style.borderColor = 'rgba(255, 200, 150, 0.5)'
             }}
           >
-            {models.filter(m => m.side === 'left' || m.side === null).map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name}
-              </option>
-            ))}
-          </select>
+            <span>
+              {models.find(m => m.id === selectedLeftModel)?.name || 'Select Model'}
+            </span>
+            <span style={{ fontSize: '14px' }}>▼</span>
+          </button>
         </div>
 
         {/* Right Hand Model */}
@@ -337,25 +355,38 @@ export default function ControlPanel({
           }}>
             Right
           </label>
-          <select
-            value={selectedRightModel}
-            onChange={(e) => onRightModelChange(e.target.value)}
+          <button
+            onClick={() => setIsRightModalOpen(true)}
             style={{
               width: '100%',
-              padding: '6px',
+              padding: '8px 12px',
               fontSize: '11px',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
+              backgroundColor: 'rgba(100, 150, 255, 0.2)',
+              border: '1px solid rgba(150, 200, 255, 0.5)',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              color: 'white',
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              transition: 'all 0.2s',
+              fontWeight: '500'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.3)'
+              e.currentTarget.style.borderColor = 'rgba(150, 200, 255, 0.8)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.2)'
+              e.currentTarget.style.borderColor = 'rgba(150, 200, 255, 0.5)'
             }}
           >
-            {models.filter(m => m.side === 'right' || m.side === null).map((model) => (
-              <option key={model.id} value={model.id}>
-                {model.name}
-              </option>
-            ))}
-          </select>
+            <span>
+              {models.find(m => m.id === selectedRightModel)?.name || 'Select Model'}
+            </span>
+            <span style={{ fontSize: '14px' }}>▼</span>
+          </button>
         </div>
       </div>
 
@@ -904,6 +935,25 @@ export default function ControlPanel({
       }}>
         Mouse: rotate/zoom 3D view
       </div>
+
+      {/* Model Selector Modals */}
+      <ModelSelectorModal
+        isOpen={isLeftModalOpen}
+        onClose={() => setIsLeftModalOpen(false)}
+        onSelectModel={onLeftModelChange}
+        models={models.filter(m => m.side === 'left' || m.side === null)}
+        currentModel={selectedLeftModel}
+        title="Select Left Hand Model"
+      />
+
+      <ModelSelectorModal
+        isOpen={isRightModalOpen}
+        onClose={() => setIsRightModalOpen(false)}
+        onSelectModel={onRightModelChange}
+        models={models.filter(m => m.side === 'right' || m.side === null)}
+        currentModel={selectedRightModel}
+        title="Select Right Hand Model"
+      />
     </div>
   )
 }
