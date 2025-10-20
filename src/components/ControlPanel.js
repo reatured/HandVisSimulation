@@ -14,8 +14,8 @@ const JointButton = memo(({ jointName, label, isAvailable, selectedJoint, onSele
       }}
       disabled={isDisabled}
       style={{
-        padding: '8px 4px',
-        fontSize: '11px',
+        padding: '5px 2px',
+        fontSize: '9px',
         backgroundColor: isSelected
           ? 'rgba(100, 150, 255, 0.9)'
           : isDisabled
@@ -23,7 +23,7 @@ const JointButton = memo(({ jointName, label, isAvailable, selectedJoint, onSele
           : 'rgba(255, 255, 255, 0.15)',
         color: isDisabled ? 'rgba(255, 255, 255, 0.3)' : 'white',
         border: isSelected ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-        borderRadius: '4px',
+        borderRadius: '3px',
         cursor: isDisabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s',
         fontWeight: isSelected ? 'bold' : 'normal',
@@ -140,32 +140,32 @@ export default function ControlPanel({
       right: 0,
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      padding: '20px',
-      minWidth: '380px',
-      maxWidth: '450px',
+      padding: '12px',
+      minWidth: '320px',
+      maxWidth: '380px',
       zIndex: 20,
       borderLeft: '2px solid rgba(255, 255, 255, 0.2)',
       borderTop: '2px solid rgba(255, 255, 255, 0.2)',
-      borderTopLeftRadius: '12px',
+      borderTopLeftRadius: '8px',
       maxHeight: '90vh',
       overflowY: 'auto'
     }}>
       <div style={{
         color: 'white',
-        fontSize: '18px',
+        fontSize: '15px',
         fontWeight: 'bold',
-        marginBottom: '20px'
+        marginBottom: '12px'
       }}>
         Hand Controls
       </div>
 
       {/* Control Mode Toggle */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{
           color: 'white',
-          fontSize: '14px',
+          fontSize: '12px',
           display: 'block',
-          marginBottom: '8px',
+          marginBottom: '4px',
           fontWeight: '500'
         }}>
           Control Mode
@@ -173,19 +173,19 @@ export default function ControlPanel({
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '10px'
+          gap: '6px'
         }}>
           <button
             onClick={() => onControlModeChange('manual')}
             style={{
-              padding: '12px',
-              fontSize: '14px',
+              padding: '8px',
+              fontSize: '12px',
               backgroundColor: isManualMode
                 ? 'rgba(100, 200, 100, 0.9)'
                 : 'rgba(255, 255, 255, 0.15)',
               color: 'white',
               border: isManualMode ? '2px solid rgba(150, 255, 150, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s',
               fontWeight: isManualMode ? 'bold' : '500',
@@ -197,14 +197,14 @@ export default function ControlPanel({
           <button
             onClick={() => onControlModeChange('camera')}
             style={{
-              padding: '12px',
-              fontSize: '14px',
+              padding: '8px',
+              fontSize: '12px',
               backgroundColor: isCameraMode
                 ? 'rgba(100, 150, 255, 0.9)'
                 : 'rgba(255, 255, 255, 0.15)',
               color: 'white',
               border: isCameraMode ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s',
               fontWeight: isCameraMode ? 'bold' : '500',
@@ -219,43 +219,43 @@ export default function ControlPanel({
       {/* Calibration Section - Only visible in camera mode */}
       {isCameraMode && (
         <div style={{
-          marginBottom: '20px',
-          padding: '15px',
+          marginBottom: '12px',
+          padding: '10px',
           backgroundColor: 'rgba(100, 150, 255, 0.1)',
           border: '1px solid rgba(100, 150, 255, 0.3)',
-          borderRadius: '8px'
+          borderRadius: '6px'
         }}>
           <div style={{
             color: 'white',
-            fontSize: '13px',
-            marginBottom: '10px',
+            fontSize: '11px',
+            marginBottom: '6px',
             fontWeight: '500'
           }}>
             Calibration
           </div>
           <div style={{
             color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '12px',
-            marginBottom: '10px',
-            lineHeight: '1.4'
+            fontSize: '10px',
+            marginBottom: '6px',
+            lineHeight: '1.3'
           }}>
-            Hold your hand in a relaxed, open position and click calibrate.
+            Hold hand relaxed, open position and click calibrate.
           </div>
           <div style={{
             display: 'flex',
-            gap: '10px',
+            gap: '6px',
             alignItems: 'center'
           }}>
             <button
               onClick={onCalibrate}
               style={{
                 flex: 1,
-                padding: '10px',
-                fontSize: '13px',
+                padding: '6px',
+                fontSize: '11px',
                 backgroundColor: 'rgba(100, 200, 100, 0.8)',
                 color: 'white',
                 border: '1px solid rgba(150, 255, 150, 0.5)',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 fontWeight: '600',
                 textTransform: 'uppercase',
@@ -268,54 +268,54 @@ export default function ControlPanel({
                 e.currentTarget.style.backgroundColor = 'rgba(100, 200, 100, 0.8)'
               }}
             >
-              Calibrate Now
+              Calibrate
             </button>
             <div style={{
-              fontSize: '11px',
+              fontSize: '10px',
               color: calibrationStatus?.isCalibrated
                 ? 'rgba(100, 255, 100, 0.9)'
                 : 'rgba(255, 200, 100, 0.9)',
               fontWeight: '500',
               whiteSpace: 'nowrap'
             }}>
-              {calibrationStatus?.isCalibrated ? '✓ Calibrated' : '⚠ Not calibrated'}
+              {calibrationStatus?.isCalibrated ? '✓' : '⚠'}
             </div>
           </div>
         </div>
       )}
 
       {/* Model Selector - Dual Hands */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{
           color: 'white',
-          fontSize: '14px',
+          fontSize: '12px',
           display: 'block',
-          marginBottom: '8px',
+          marginBottom: '4px',
           fontWeight: '500'
         }}>
-          Select Hand Models
+          Hand Models
         </label>
 
         {/* Left Hand Model */}
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{ marginBottom: '6px' }}>
           <label style={{
             color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '12px',
+            fontSize: '10px',
             display: 'block',
-            marginBottom: '4px'
+            marginBottom: '2px'
           }}>
-            Left Hand
+            Left
           </label>
           <select
             value={selectedLeftModel}
             onChange={(e) => onLeftModelChange(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px',
-              fontSize: '13px',
+              padding: '6px',
+              fontSize: '11px',
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer'
             }}
           >
@@ -331,22 +331,22 @@ export default function ControlPanel({
         <div>
           <label style={{
             color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '12px',
+            fontSize: '10px',
             display: 'block',
-            marginBottom: '4px'
+            marginBottom: '2px'
           }}>
-            Right Hand
+            Right
           </label>
           <select
             value={selectedRightModel}
             onChange={(e) => onRightModelChange(e.target.value)}
             style={{
               width: '100%',
-              padding: '8px',
-              fontSize: '13px',
+              padding: '6px',
+              fontSize: '11px',
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer'
             }}
           >
@@ -360,22 +360,22 @@ export default function ControlPanel({
       </div>
 
       {/* Switch Hand Controls - Always visible */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{
           color: 'white',
-          fontSize: '14px',
+          fontSize: '12px',
           display: 'block',
-          marginBottom: '8px',
+          marginBottom: '4px',
           fontWeight: '500'
         }}>
-          Hand Control Mapping
+          Control Mapping
         </label>
         <button
           onClick={() => onSwapHandControlsChange(!swapHandControls)}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '8px',
+            fontSize: '11px',
             backgroundColor: swapHandControls
               ? 'rgba(100, 200, 100, 0.9)'
               : 'rgba(100, 150, 255, 0.9)',
@@ -383,71 +383,63 @@ export default function ControlPanel({
             border: swapHandControls
               ? '2px solid rgba(150, 255, 150, 1)'
               : '2px solid rgba(150, 200, 255, 1)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: 'pointer',
             transition: 'all 0.2s',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
         >
-          {swapHandControls ? '🔄 Hands Swapped' : '↔️ Normal Mapping'}
+          {swapHandControls ? '🔄 Swapped' : '↔️ Normal'}
         </button>
         <div style={{
           color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginTop: '6px',
-          lineHeight: '1.3'
+          fontSize: '9px',
+          marginTop: '3px',
+          lineHeight: '1.2'
         }}>
           {swapHandControls
-            ? 'Left hand controls right model, right hand controls left model'
-            : 'Left hand controls left model, right hand controls right model'}
+            ? 'L→R, R→L'
+            : 'L→L, R→R'}
         </div>
       </div>
 
       {/* Manual Model Rotation (Z-Axis) - Always visible */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: '12px' }}>
         <label style={{
           color: 'white',
-          fontSize: '14px',
+          fontSize: '12px',
           display: 'block',
-          marginBottom: '8px',
+          marginBottom: '4px',
           fontWeight: '500'
         }}>
-          Manual Model Rotation (Blue/Z-Axis)
+          Z-Axis Rotation
         </label>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginBottom: '10px',
-          lineHeight: '1.3'
-        }}>
-          Rotate the hand model around the blue (Z) axis in 90° increments
-        </div>
 
         {/* Left Hand Controls */}
-        <div style={{ marginBottom: '12px' }}>
+        <div style={{ marginBottom: '6px' }}>
           <div style={{
             color: 'rgba(255, 200, 150, 0.9)',
-            fontSize: '12px',
-            marginBottom: '6px',
+            fontSize: '10px',
+            marginBottom: '3px',
             fontWeight: '600'
           }}>
-            Left Hand: {(leftHandZRotation * 180 / Math.PI).toFixed(0)}°
+            Left: {(leftHandZRotation * 180 / Math.PI).toFixed(0)}°
           </div>
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '8px'
+            gap: '4px'
           }}>
             <button
               onClick={() => onLeftHandRotateZ(-1)}
               style={{
-                padding: '10px 8px',
-                fontSize: '13px',
+                padding: '6px',
+                fontSize: '10px',
                 backgroundColor: 'rgba(255, 150, 100, 0.8)',
                 color: 'white',
                 border: '1px solid rgba(255, 200, 150, 0.5)',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 fontWeight: '600'
@@ -459,17 +451,17 @@ export default function ControlPanel({
                 e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.8)'
               }}
             >
-              ← Rotate -90°
+              ← -90°
             </button>
             <button
               onClick={() => onLeftHandRotateZ(1)}
               style={{
-                padding: '10px 8px',
-                fontSize: '13px',
+                padding: '6px',
+                fontSize: '10px',
                 backgroundColor: 'rgba(255, 150, 100, 0.8)',
                 color: 'white',
                 border: '1px solid rgba(255, 200, 150, 0.5)',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 fontWeight: '600'
@@ -481,7 +473,7 @@ export default function ControlPanel({
                 e.currentTarget.style.backgroundColor = 'rgba(255, 150, 100, 0.8)'
               }}
             >
-              Rotate +90° →
+              +90° →
             </button>
           </div>
         </div>
@@ -490,26 +482,26 @@ export default function ControlPanel({
         <div>
           <div style={{
             color: 'rgba(150, 200, 255, 0.9)',
-            fontSize: '12px',
-            marginBottom: '6px',
+            fontSize: '10px',
+            marginBottom: '3px',
             fontWeight: '600'
           }}>
-            Right Hand: {(rightHandZRotation * 180 / Math.PI).toFixed(0)}°
+            Right: {(rightHandZRotation * 180 / Math.PI).toFixed(0)}°
           </div>
           <div style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
-            gap: '8px'
+            gap: '4px'
           }}>
             <button
               onClick={() => onRightHandRotateZ(-1)}
               style={{
-                padding: '10px 8px',
-                fontSize: '13px',
+                padding: '6px',
+                fontSize: '10px',
                 backgroundColor: 'rgba(100, 150, 255, 0.8)',
                 color: 'white',
                 border: '1px solid rgba(150, 200, 255, 0.5)',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 fontWeight: '600'
@@ -521,17 +513,17 @@ export default function ControlPanel({
                 e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.8)'
               }}
             >
-              ← Rotate -90°
+              ← -90°
             </button>
             <button
               onClick={() => onRightHandRotateZ(1)}
               style={{
-                padding: '10px 8px',
-                fontSize: '13px',
+                padding: '6px',
+                fontSize: '10px',
                 backgroundColor: 'rgba(100, 150, 255, 0.8)',
                 color: 'white',
                 border: '1px solid rgba(150, 200, 255, 0.5)',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 fontWeight: '600'
@@ -543,7 +535,7 @@ export default function ControlPanel({
                 e.currentTarget.style.backgroundColor = 'rgba(100, 150, 255, 0.8)'
               }}
             >
-              Rotate +90° →
+              +90° →
             </button>
           </div>
         </div>
@@ -551,93 +543,93 @@ export default function ControlPanel({
 
       {/* Joint Selector - Only in manual mode */}
       {isManualMode && (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: '12px' }}>
           {/* Hand Selector (Left/Right) */}
-          <div style={{ marginBottom: '15px' }}>
+          <div style={{ marginBottom: '8px' }}>
             <label style={{
               color: 'white',
-              fontSize: '14px',
+              fontSize: '12px',
               display: 'block',
-              marginBottom: '8px',
+              marginBottom: '4px',
               fontWeight: '500'
             }}>
-              Control Which Hand
+              Control Hand
             </label>
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '10px'
+              gap: '6px'
             }}>
               <button
                 onClick={() => onSelectedHandChange('left')}
                 style={{
-                  padding: '10px',
-                  fontSize: '13px',
+                  padding: '6px',
+                  fontSize: '11px',
                   backgroundColor: selectedHand === 'left'
                     ? 'rgba(255, 150, 100, 0.9)'
                     : 'rgba(255, 255, 255, 0.15)',
                   color: 'white',
                   border: selectedHand === 'left' ? '2px solid rgba(255, 200, 150, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '6px',
+                  borderRadius: '4px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   fontWeight: selectedHand === 'left' ? 'bold' : '500',
                   textTransform: 'uppercase'
                 }}
               >
-                Left Hand
+                Left
               </button>
               <button
                 onClick={() => onSelectedHandChange('right')}
                 style={{
-                  padding: '10px',
-                  fontSize: '13px',
+                  padding: '6px',
+                  fontSize: '11px',
                   backgroundColor: selectedHand === 'right'
                     ? 'rgba(100, 150, 255, 0.9)'
                     : 'rgba(255, 255, 255, 0.15)',
                   color: 'white',
                   border: selectedHand === 'right' ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '6px',
+                  borderRadius: '4px',
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   fontWeight: selectedHand === 'right' ? 'bold' : '500',
                   textTransform: 'uppercase'
                 }}
               >
-                Right Hand
+                Right
               </button>
             </div>
           </div>
 
           <label style={{
             color: 'white',
-            fontSize: '14px',
+            fontSize: '12px',
             display: 'block',
-            marginBottom: '12px',
+            marginBottom: '6px',
             fontWeight: '500'
           }}>
-            Select Joint to Control
+            Select Joint
           </label>
 
         {/* 5 Fingers Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '6px',
-          marginBottom: '10px'
+          gap: '4px',
+          marginBottom: '6px'
         }}>
           {fingers.map(finger => (
             <div key={finger.name} style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: '4px'
+              gap: '3px'
             }}>
               {/* Finger Label */}
               <div style={{
                 color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '10px',
+                fontSize: '8px',
                 textAlign: 'center',
-                marginBottom: '2px',
+                marginBottom: '1px',
                 fontWeight: '500'
               }}>
                 {finger.label}
@@ -671,8 +663,8 @@ export default function ControlPanel({
           disabled={!jointAvailability.wrist}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '8px',
+            fontSize: '11px',
             backgroundColor: selectedJoint === 'wrist'
               ? 'rgba(100, 150, 255, 0.9)'
               : jointAvailability.wrist
@@ -680,7 +672,7 @@ export default function ControlPanel({
               : 'rgba(80, 80, 80, 0.3)',
             color: !jointAvailability.wrist ? 'rgba(255, 255, 255, 0.3)' : 'white',
             border: selectedJoint === 'wrist' ? '2px solid rgba(150, 200, 255, 1)' : '1px solid rgba(255, 255, 255, 0.3)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: jointAvailability.wrist ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s',
             fontWeight: selectedJoint === 'wrist' ? 'bold' : '500',
@@ -696,15 +688,15 @@ export default function ControlPanel({
 
       {/* Rotation Slider - Only in manual mode */}
       {isManualMode && (
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{ marginBottom: '12px' }}>
         <label style={{
           color: 'white',
-          fontSize: '14px',
+          fontSize: '11px',
           display: 'block',
-          marginBottom: '8px',
+          marginBottom: '4px',
           fontWeight: '500'
         }}>
-          {selectedJoint.replace('_', ' ').toUpperCase()} Rotation: {currentRotation.toFixed(2)} rad
+          {selectedJoint.replace('_', ' ').toUpperCase()}: {currentRotation.toFixed(2)}
         </label>
         <input
           type="range"
@@ -724,8 +716,8 @@ export default function ControlPanel({
           display: 'flex',
           justifyContent: 'space-between',
           color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '12px',
-          marginTop: '4px'
+          fontSize: '9px',
+          marginTop: '2px'
         }}>
           <span>-1.5</span>
           <span>0</span>
@@ -735,279 +727,168 @@ export default function ControlPanel({
       )}
 
       {/* Gimbal Toggle - Always visible */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{
-          color: 'white',
-          fontSize: '14px',
-          display: 'block',
-          marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          3D Gimbal Controls
-        </label>
+      <div style={{ marginBottom: '10px' }}>
         <button
           onClick={() => onShowGimbalsChange(!showGimbals)}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '7px',
+            fontSize: '11px',
             backgroundColor: showGimbals
               ? 'rgba(100, 200, 100, 0.9)'
               : 'rgba(255, 100, 100, 0.9)',
             color: 'white',
             border: showGimbals ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: 'pointer',
             transition: 'all 0.2s',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
         >
-          {showGimbals ? '✓ Gimbals Visible' : '✗ Gimbals Hidden'}
+          {showGimbals ? '✓ Gimbals' : '✗ Gimbals'}
         </button>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginTop: '6px',
-          lineHeight: '1.3'
-        }}>
-          Drag the 3D rotation handles in the scene to adjust hand orientation offset
-        </div>
       </div>
 
       {/* Mirror Mode Toggle - Always visible */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{
-          color: 'white',
-          fontSize: '14px',
-          display: 'block',
-          marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          Mirror Mode
-        </label>
+      <div style={{ marginBottom: '10px' }}>
         <button
           onClick={() => onMirrorModeChange(!mirrorMode)}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '7px',
+            fontSize: '11px',
             backgroundColor: mirrorMode
               ? 'rgba(100, 200, 255, 0.9)'
               : 'rgba(255, 200, 100, 0.9)',
             color: 'white',
             border: mirrorMode ? '2px solid rgba(150, 220, 255, 1)' : '2px solid rgba(255, 220, 150, 1)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: 'pointer',
             transition: 'all 0.2s',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
         >
-          {mirrorMode ? '🪞 Front View (Mirror)' : '👁️ Back View'}
+          {mirrorMode ? '🪞 Front' : '👁️ Back'}
         </button>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginTop: '6px',
-          lineHeight: '1.3'
-        }}>
-          {mirrorMode
-            ? 'Camera at front - your right hand controls right model (like a mirror)'
-            : 'Camera at back - your right hand controls left model (back view perspective)'}
-        </div>
       </div>
 
       {/* Coordinate Axes Toggle - Always visible */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{
-          color: 'white',
-          fontSize: '14px',
-          display: 'block',
-          marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          Coordinate Axes
-        </label>
+      <div style={{ marginBottom: '10px' }}>
         <button
           onClick={() => onShowAxesChange(!showAxes)}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '7px',
+            fontSize: '11px',
             backgroundColor: showAxes
               ? 'rgba(100, 200, 100, 0.9)'
               : 'rgba(255, 100, 100, 0.9)',
             color: 'white',
             border: showAxes ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: 'pointer',
             transition: 'all 0.2s',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
         >
-          {showAxes ? '✓ Axes Visible' : '✗ Axes Hidden'}
+          {showAxes ? '✓ Axes' : '✗ Axes'}
         </button>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginTop: '6px',
-          lineHeight: '1.3'
-        }}>
-          Shows coordinate system reference: Red=X, Green=Y, Blue=Z for scene and each hand
-        </div>
       </div>
 
       {/* Debug Labels Toggle */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{
-          color: 'white',
-          display: 'block',
-          marginBottom: '8px',
-          fontWeight: '500'
-        }}>
-          Debug Labels
-        </label>
+      <div style={{ marginBottom: '10px' }}>
         <button
           onClick={() => onShowDebugLabelsChange(!showDebugLabels)}
           style={{
             width: '100%',
-            padding: '12px',
-            fontSize: '14px',
+            padding: '7px',
+            fontSize: '11px',
             backgroundColor: showDebugLabels
               ? 'rgba(100, 200, 100, 0.9)'
               : 'rgba(255, 100, 100, 0.9)',
             color: 'white',
             border: showDebugLabels ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
-            borderRadius: '6px',
+            borderRadius: '4px',
             cursor: 'pointer',
             transition: 'all 0.2s',
             fontWeight: 'bold',
             textTransform: 'uppercase'
           }}
         >
-          {showDebugLabels ? '✓ Labels Visible' : '✗ Labels Hidden'}
+          {showDebugLabels ? '✓ Labels' : '✗ Labels'}
         </button>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '11px',
-          marginTop: '6px',
-          lineHeight: '1.3'
-        }}>
-          Shows hand labels (LEFT/RIGHT HAND) and scene direction labels (FRONT/BACK/LEFT/RIGHT)
-        </div>
       </div>
 
       {/* Camera Position Tracking Toggle - Only in camera mode */}
       {isCameraMode && (
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            color: 'white',
-            fontSize: '14px',
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500'
-          }}>
-            Hand Position Tracking
-          </label>
+        <div style={{ marginBottom: '10px' }}>
           <button
             onClick={() => onEnableCameraPositionChange(!enableCameraPosition)}
             style={{
               width: '100%',
-              padding: '12px',
-              fontSize: '14px',
+              padding: '7px',
+              fontSize: '11px',
               backgroundColor: enableCameraPosition
                 ? 'rgba(100, 200, 100, 0.9)'
                 : 'rgba(255, 100, 100, 0.9)',
               color: 'white',
               border: enableCameraPosition ? '2px solid rgba(150, 255, 150, 1)' : '2px solid rgba(255, 150, 150, 1)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s',
               fontWeight: 'bold',
               textTransform: 'uppercase'
             }}
           >
-            {enableCameraPosition ? '✓ Position Enabled' : '✗ Position Disabled'}
+            {enableCameraPosition ? '✓ Position' : '✗ Position'}
           </button>
-          <div style={{
-            color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '11px',
-            marginTop: '6px',
-            lineHeight: '1.3'
-          }}>
-            When enabled, hand models move in 3D space following your real hand position
-          </div>
         </div>
       )}
 
       {/* Wrist Rotation Toggle - Only in camera mode */}
       {isCameraMode && (
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{
-            color: 'white',
-            fontSize: '14px',
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500'
-          }}>
-            Wrist Rotation
-          </label>
+        <div style={{ marginBottom: '10px' }}>
           <button
             onClick={() => onDisableWristRotationChange(!disableWristRotation)}
             style={{
               width: '100%',
-              padding: '12px',
-              fontSize: '14px',
+              padding: '7px',
+              fontSize: '11px',
               backgroundColor: disableWristRotation
                 ? 'rgba(255, 100, 100, 0.9)'
                 : 'rgba(100, 200, 100, 0.9)',
               color: 'white',
               border: disableWristRotation ? '2px solid rgba(255, 150, 150, 1)' : '2px solid rgba(150, 255, 150, 1)',
-              borderRadius: '6px',
+              borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s',
               fontWeight: 'bold',
               textTransform: 'uppercase'
             }}
           >
-            {disableWristRotation ? '✗ Wrist Disabled' : '✓ Wrist Enabled'}
+            {disableWristRotation ? '✗ Wrist' : '✓ Wrist'}
           </button>
-          <div style={{
-            color: 'rgba(255, 255, 255, 0.6)',
-            fontSize: '11px',
-            marginTop: '6px',
-            lineHeight: '1.3'
-          }}>
-            When disabled, only finger joints move while hand orientation stays fixed
-          </div>
         </div>
       )}
 
       {/* Camera mode info */}
       {isCameraMode && (
         <div style={{
-          padding: '15px',
+          padding: '8px',
           backgroundColor: 'rgba(100, 150, 255, 0.1)',
           border: '1px solid rgba(100, 150, 255, 0.3)',
-          borderRadius: '8px',
+          borderRadius: '4px',
           marginBottom: '10px'
         }}>
           <div style={{
-            color: 'white',
-            fontSize: '13px',
-            marginBottom: '8px',
-            fontWeight: '500'
-          }}>
-            Camera Tracking Active
-          </div>
-          <div style={{
             color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '12px',
-            lineHeight: '1.4'
+            fontSize: '10px',
+            lineHeight: '1.3'
           }}>
-            Move your hand in front of the camera. The hand model will follow your movements in real-time.
+            Camera tracking active
           </div>
         </div>
       )}
@@ -1015,13 +896,13 @@ export default function ControlPanel({
       {/* Helper text */}
       <div style={{
         color: 'rgba(255, 255, 255, 0.5)',
-        fontSize: '12px',
+        fontSize: '9px',
         fontStyle: 'italic',
-        marginTop: '15px',
-        paddingTop: '15px',
+        marginTop: '8px',
+        paddingTop: '8px',
         borderTop: '1px solid rgba(255, 255, 255, 0.1)'
       }}>
-        Use mouse to rotate and zoom the 3D view
+        Mouse: rotate/zoom 3D view
       </div>
     </div>
   )

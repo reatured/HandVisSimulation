@@ -189,6 +189,240 @@ Scene3D
                     └── robot.joints[...] (Articulated joints)
 ```
 
+## Data Flow Pipeline: Camera → 3D Model
+
+This section documents the complete data transformation pipeline from webcam video to 3D model rotations.
+
+### Pipeline Overview
+
+```
+[Webcam Video]
+    ↓
+[MediaPipe Hands AI Model]
+    ↓
+[21 Hand Landmarks (3D positions)]
+    ↓
+[Kinematics Calculations]
+    ↓
+[Motion Filtering & Smoothing]
+    ↓
+[Calibration (Optional)]
+    ↓
+[Handedness Correction]
+    ↓
+[Wrist Quaternion + Joint Angles]
+    ↓
+[React State (App.js)]
+    ↓
+[3D Scene Rendering (Scene3D.js)]
+    ↓
+[3D Hand Model Display]
+```
+
+### Detailed Processing Chain
+
+#### Stage 1: Camera Capture & MediaPipe Detection
+**Location:** `HandTrackingCamera.js:250-275`
+
+1. **Camera initialization** (`startCamera()`)
+   - Requests webcam access: `640x480` resolution
+   - Connects video stream to `<video>` element
+   - Input: Raw webcam video stream
+   - Output: Video frames at camera FPS
+
+2. **Hand detection loop** (`detectHands()`)
+   - Continuously processes video frames via `requestAnimationFrame`
+   - Sends frames to MediaPipe Hands model
+   - Input: Video frames
+   - Output: `multiHandLandmarks` array (up to 2 hands)
+
+3. **MediaPipe processing** (`hands.onResults()` at line 62)
+   - AI model detects hands in frame
+   - Extracts 21 3D landmarks per hand (x, y, z coordinates)
+   - Input: Video frame image
+   - Output: Hand results object with landmarks
+
+#### Stage 2: Landmark Coordinate System
+**Location:** `HandTrackingCamera.js:166-184`
+
+**MediaPipe Coordinate System:**
+- `x`: 0 (left) to 1 (right) - normalized across frame width
+- `y`: 0 (top) to 1 (bottom) - normalized across frame height
+- `z`: Depth relative to wrist (negative = away from camera)
+
+**Landmark 0 = Wrist position** (extracted at lines 174-184):
+```javascript
+// Convert MediaPipe coordinates to Three.js space
+const position = {
+    x: (wristLandmark.x - 0.5) * 2,   // Center around 0, scale to [-1, 1]
+    y: -(wristLandmark.y - 0.5) * 2,  // Invert Y and center
+    z: -wristLandmark.z * 2            // Invert Z and scale
+}
+```
+
+#### Stage 3: Kinematics Conversion
+**Location:** `handKinematics.js:206-357`
+
+Called via `landmarksToJointRotations(landmarks, handedness)` at `HandTrackingCamera.js:172`
+
+**Input:** 21 MediaPipe landmarks + handedness ('Left' or 'Right')
+
+**Processing Steps:**
+
+1. **Wrist Orientation Calculation** (`calculateWristOrientation()` at `handKinematics.js:131-198`)
+   - Uses landmarks 0 (wrist), 5 (index MCP), 9 (middle MCP), 17 (pinky MCP)
+   - Computes palm plane vectors:
+     - `palmForward`: Wrist → Middle finger base (points up hand)
+     - `palmRight`: Pinky → Index (points across palm)
+     - `palmNormal`: Cross product (points out of palm)
+   - Builds rotation matrix from these orthogonal vectors
+   - Converts matrix to quaternion: `{x, y, z, w}` (avoids gimbal lock)
+   - Applies 180° Y-axis correction for left hand
+
+2. **Joint Angle Calculations** (lines 214-345)
+   - For each finger (thumb, index, middle, ring, pinky):
+     - Computes curl angles at MCP, PIP, DIP joints
+     - Uses `calculateFingerCurl()` - measures angle between 3 points
+     - Formula: `curl = π - angleBetweenVectors` (0 = straight, positive = bent)
+   - Calculates thumb abduction/opposition
+   - Stores in `joints` object: `{ thumb_mcp, thumb_pip, index_mcp, ... }`
+
+**Output:**
+```javascript
+{
+    wristOrientation: { x, y, z, w },  // Quaternion
+    joints: {
+        thumb_mcp, thumb_pip, thumb_dip, thumb_tip,
+        index_mcp, index_pip, index_dip, index_tip,
+        middle_mcp, middle_pip, middle_dip, middle_tip,
+        ring_mcp, ring_pip, ring_dip, ring_tip,
+        pinky_mcp, pinky_pip, pinky_dip, pinky_tip
+    }
+}
+```
+
+#### Stage 4: Motion Filtering
+**Location:** `HandTrackingCamera.js:189-190`
+
+Uses `MotionFilter` class (initialized at lines 17-23):
+```javascript
+rotations = motionFilterRef.current.filter(rotations, Date.now(), handPrefix)
+```
+
+**Purpose:** Smooths jittery tracking data
+- **Exponential smoothing** (alpha = 0.3): `filtered = prev + 0.3 * (new - prev)`
+- **Velocity limiting**: Caps maximum rotation speed to prevent spikes
+- **Constraint enforcement**: Ensures joint angles stay within physical limits
+
+#### Stage 5: Calibration (Optional)
+**Location:** `HandTrackingCamera.js:193-195`
+
+```javascript
+if (calibrationManager) {
+    rotations = calibrationManager.applyCalibration(rotations)
+}
+```
+
+**Purpose:** User-defined offset correction for tracking accuracy
+
+#### Stage 6: Handedness-Specific Correction
+**Location:** `HandTrackingCamera.js:197-219`
+
+**Right Hand Correction:**
+- Applies 180° Y-axis rotation using quaternion multiplication
+- Corrects inverted orientation from MediaPipe's coordinate system
+- Uses `THREE.Quaternion` for gimbal-lock-free rotation
+
+```javascript
+const correctionQuat = new THREE.Quaternion()
+correctionQuat.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)
+currentQuat.premultiply(correctionQuat)
+```
+
+#### Stage 7: React State Update
+**Location:** `HandTrackingCamera.js:232-239`
+
+Sends processed data to parent component via callbacks:
+```javascript
+onJointRotations({
+    left: rotationsData,  // or null if hand not detected
+    right: rotationsData  // or null if hand not detected
+})
+
+onHandPositions({
+    left: positionData,   // {x, y, z} or null
+    right: positionData   // {x, y, z} or null
+})
+```
+
+Received in `App.js:189-206` and stored in React state.
+
+#### Stage 8: 3D Scene Rendering
+**Location:** `Scene3D.js:180-289`
+
+**Rotation Level 1 - Wrist Orientation** (lines 227-251):
+```javascript
+<QuaternionGroup
+    position={[0.3, 0, 0]}
+    quaternion={leftWristRotation}
+>
+```
+- Applies wrist quaternion from camera tracking
+- Rotates entire hand mesh group
+- Axes helper rotates with this group
+
+**Rotation Level 2 - Gimbal Control** (lines 233-250):
+```javascript
+<GimbalControl
+    rotation={safeLeftGimbal}
+    onRotationChange={onLeftGimbalChange}
+>
+```
+- User-controlled manual offset rotation
+- Quaternion-based gimbal
+
+**Rotation Level 3 - Z-Axis Offset** (`HandModel.js:85`):
+- Manual ±90° rotation around blue (Z) axis
+- Controlled by UI buttons
+
+**Rotation Level 4 - Joint Rotations** (`URDFHandModel.js:140-167`):
+```javascript
+joint.setJointValue(rotations.joints[uiJointName])
+```
+- Applies individual finger joint angles
+- Maps UI joint names to URDF joint names
+- Updates URDF robot skeleton
+
+### Key Transformations Summary
+
+| Stage | Input | Processing | Output | File:Line |
+|-------|-------|------------|--------|-----------|
+| **1. Camera** | Webcam video | MediaPipe AI detection | 21 landmarks × 2 hands | `HandTrackingCamera.js:62` |
+| **2. Position** | Landmark 0 (wrist) | Coordinate conversion | `{x, y, z}` position | `HandTrackingCamera.js:174-184` |
+| **3. Wrist** | Landmarks 0,5,9,17 | Palm plane calculation | Quaternion `{x,y,z,w}` | `handKinematics.js:131-198` |
+| **4. Joints** | All 21 landmarks | Angle measurements | 20 joint angles (radians) | `handKinematics.js:214-345` |
+| **5. Filter** | Raw angles | Exponential smoothing | Smoothed angles | `HandTrackingCamera.js:189-190` |
+| **6. Calibration** | Smoothed angles | User offset | Calibrated angles | `HandTrackingCamera.js:193-195` |
+| **7. Correction** | Wrist quaternion | 180° Y-rotation (right hand) | Final quaternion | `HandTrackingCamera.js:197-219` |
+| **8. State** | All data | React callbacks | Component state | `App.js:189-206` |
+| **9. Render** | State data | Hierarchical transforms | 3D visualization | `Scene3D.js:180-289` |
+
+### Coordinate System Conversions
+
+**MediaPipe → Three.js Conversion:**
+```
+MediaPipe:          Three.js:
+X: right →          X: right →
+Y: down ↓           Y: up ↑        (inverted)
+Z: toward camera    Z: toward user  (inverted)
+```
+
+**Right-Hand Rule Application:**
+Both hands use consistent right-hand rule:
+- 🔴 **Red (X)**: Thumb direction (palm right vector)
+- 🟢 **Green (Y)**: Palm normal (toward user)
+- 🔵 **Blue (Z)**: Finger direction (up the hand)
+
 ### Coordinate System & Axes
 
 The application uses a **right-hand rule** coordinate system for both left and right hand models. This provides a consistent reference frame for all rotations and transformations.
