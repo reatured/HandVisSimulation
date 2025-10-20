@@ -11,7 +11,16 @@ const getModelImage = (modelPath) => {
     'schunk_hand': './assets/doc/gallery/svh_rt.webp',
     'barrett_hand': './assets/doc/gallery/bhand_rt.webp',
     'dclaw_gripper': './assets/doc/gallery/dclaw_rt.webp',
-    'panda_gripper': './assets/doc/gallery/panda_rt.webp'
+    'panda_gripper': './assets/doc/gallery/panda_rt.webp',
+    'linker_l6': './assets/doc/gallery/linker_l6_rt.png',
+    'linker_l10': './assets/doc/gallery/linker_l10_rt.png',
+    'linker_l20': './assets/doc/gallery/linker_l20_rt.png',
+    'linker_l20pro': './assets/doc/gallery/linker_l20pro_rt.png',
+    'linker_l21': null, // No preview image available
+    'linker_l25': null, // No preview image available
+    'linker_l30': './assets/doc/gallery/linker_l30_rt.png',
+    'linker_o6': './assets/doc/gallery/linker_o6_rt.png',
+    'linker_o7': './assets/doc/gallery/linker_o7_rt.png'
   }
   return imageMap[modelPath] || null
 }

@@ -3,6 +3,7 @@ import { useLoader, useFrame } from '@react-three/fiber'
 import URDFLoader from 'urdf-loader'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { getURDFPath } from '../utils/urdfConfig'
 import { mapUIJointToURDF, clampJointValue } from '../utils/urdfJointMapping'
 
@@ -46,21 +47,48 @@ export default function URDFHandModel({
 
     loader.manager = manager
 
-    // Register the GLTF loader for loading GLB files
+    // Register loaders for different mesh file types
     // Using loadMeshCb as documented in urdf-loader
     const gltfLoader = new GLTFLoader(manager)
+    const stlLoader = new STLLoader(manager)
+
     loader.loadMeshCb = (path, manager, onComplete) => {
-      gltfLoader.load(
-        path,
-        (result) => {
-          onComplete(result.scene)
-        },
-        undefined,
-        (err) => {
-          console.error('Error loading mesh:', path, err)
-          onComplete(null, err)
-        }
-      )
+      const extension = path.split('.').pop().toLowerCase()
+
+      if (extension === 'stl') {
+        // Load STL file
+        stlLoader.load(
+          path,
+          (geometry) => {
+            // STL loader returns geometry, need to create mesh
+            const material = new THREE.MeshStandardMaterial({
+              color: 0xcccccc,
+              metalness: 0.3,
+              roughness: 0.7
+            })
+            const mesh = new THREE.Mesh(geometry, material)
+            onComplete(mesh)
+          },
+          undefined,
+          (err) => {
+            console.error('Error loading STL mesh:', path, err)
+            onComplete(null, err)
+          }
+        )
+      } else {
+        // Load GLB/GLTF file (existing behavior)
+        gltfLoader.load(
+          path,
+          (result) => {
+            onComplete(result.scene)
+          },
+          undefined,
+          (err) => {
+            console.error('Error loading GLTF mesh:', path, err)
+            onComplete(null, err)
+          }
+        )
+      }
     }
 
     // Set the working path for resolving relative mesh paths

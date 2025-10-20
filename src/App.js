@@ -29,6 +29,22 @@ const HAND_MODELS = [
   { id: 'barrett', name: 'Barrett Hand', path: 'barrett_hand', side: null },
   { id: 'dclaw', name: 'DClaw Gripper', path: 'dclaw_gripper', side: null },
   { id: 'panda', name: 'Panda Gripper', path: 'panda_gripper', side: null },
+  { id: 'linker_l6_left', name: 'Linker Hand L6 (Left)', path: 'linker_l6', side: 'left' },
+  { id: 'linker_l6_right', name: 'Linker Hand L6 (Right)', path: 'linker_l6', side: 'right' },
+  { id: 'linker_l10_left', name: 'Linker Hand L10 (Left)', path: 'linker_l10', side: 'left' },
+  { id: 'linker_l10_right', name: 'Linker Hand L10 (Right)', path: 'linker_l10', side: 'right' },
+  { id: 'linker_l20_left', name: 'Linker Hand L20 (Left)', path: 'linker_l20', side: 'left' },
+  { id: 'linker_l20_right', name: 'Linker Hand L20 (Right)', path: 'linker_l20', side: 'right' },
+  { id: 'linker_l20pro_right', name: 'Linker Hand L20 Pro (Right)', path: 'linker_l20pro', side: 'right' },
+  { id: 'linker_l21_left', name: 'Linker Hand L21 (Left)', path: 'linker_l21', side: 'left' },
+  { id: 'linker_l21_right', name: 'Linker Hand L21 (Right)', path: 'linker_l21', side: 'right' },
+  { id: 'linker_l25_left', name: 'Linker Hand L25 (Left)', path: 'linker_l25', side: 'left' },
+  { id: 'linker_l25_right', name: 'Linker Hand L25 (Right)', path: 'linker_l25', side: 'right' },
+  { id: 'linker_l30_right', name: 'Linker Hand L30 (Right)', path: 'linker_l30', side: 'right' },
+  { id: 'linker_o6_left', name: 'Linker Hand O6 (Left)', path: 'linker_o6', side: 'left' },
+  { id: 'linker_o6_right', name: 'Linker Hand O6 (Right)', path: 'linker_o6', side: 'right' },
+  { id: 'linker_o7_left', name: 'Linker Hand O7 (Left)', path: 'linker_o7', side: 'left' },
+  { id: 'linker_o7_right', name: 'Linker Hand O7 (Right)', path: 'linker_o7', side: 'right' },
 ]
 
 // Initialize joint rotations for all 21 joints

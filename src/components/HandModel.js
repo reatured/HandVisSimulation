@@ -43,6 +43,15 @@ function HandModelInner({
       case 'barrett_hand':
       case 'dclaw_gripper':
       case 'panda_gripper':
+      case 'linker_l6':
+      case 'linker_l10':
+      case 'linker_l20':
+      case 'linker_l20pro':
+      case 'linker_l21':
+      case 'linker_l25':
+      case 'linker_l30':
+      case 'linker_o6':
+      case 'linker_o7':
         // Use URDF loader for these models if available
         if (hasURDFSupport(modelPath)) {
           return (

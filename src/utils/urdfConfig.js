@@ -38,6 +38,40 @@ export const URDF_MODELS = {
     // Panda gripper may not have GLB version, will need to check
     null: `${PUBLIC_URL}/assets/robots/hands/panda_gripper/panda_gripper.urdf`,
   },
+  linker_l6: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_l6/left/linkerhand_l6_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l6/right/linkerhand_l6_right.urdf`,
+  },
+  linker_l10: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_l10/left/linkerhand_l10_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l10/right/linkerhand_l10_right.urdf`,
+  },
+  linker_l20: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_l20/left/linkerhand_l20_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l20/right/linkerhand_l20_right.urdf`,
+  },
+  linker_l20pro: {
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l20pro/right/linkerhand_l20pro_right.urdf`,
+  },
+  linker_l21: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_l21/left/linkerhand_l21_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l21/right/linkerhand_l21_right.urdf`,
+  },
+  linker_l25: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_l25/left/linkerhand_l25_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l25/right/linkerhand_l25_right.urdf`,
+  },
+  linker_l30: {
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_l30/right/linkerhand_l30_right.urdf`,
+  },
+  linker_o6: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_o6/left/linkerhand_o6_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_o6/right/linkerhand_o6_right.urdf`,
+  },
+  linker_o7: {
+    left: `${PUBLIC_URL}/assets/robots/hands/linker_o7/left/linkerhand_o7v3_left.urdf`,
+    right: `${PUBLIC_URL}/assets/robots/hands/linker_o7/right/linkerhand_o7v3_right.urdf`,
+  },
 }
 
 /**

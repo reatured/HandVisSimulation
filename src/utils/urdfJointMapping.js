@@ -141,6 +141,101 @@ const ABILITY_HAND_JOINT_MAP = {
 }
 
 /**
+ * Linker Hand L6 Joint Mappings (11 DOF - simpler structure)
+ * Thumb: cmc_roll, cmc_pitch, dip (3 DOF)
+ * Fingers: mcp_pitch, dip (2 DOF each)
+ */
+const LINKER_L6_JOINT_MAP = {
+  // Thumb - 3 DOF (note: typo in URDF "thunb" instead of "thumb")
+  thumb_mcp: 'thunb_cmc_roll',    // Using cmc_roll as MCP equivalent
+  thumb_pip: 'thumb_cmc_pitch',   // Using cmc_pitch as PIP equivalent
+  thumb_dip: 'thumb_dip',
+
+  // Index finger - 2 DOF
+  index_mcp: 'index_mcp_pitch',
+  index_pip: 'index_dip',         // Using dip as PIP (no separate PIP joint)
+
+  // Middle finger - 2 DOF
+  middle_mcp: 'middle_mcp_pitch',
+  middle_pip: 'middle_dip',
+
+  // Ring finger - 2 DOF
+  ring_mcp: 'ring_mcp_pitch',
+  ring_pip: 'ring_dip',
+
+  // Pinky - 2 DOF
+  pinky_mcp: 'pinky_mcp_pitch',
+  pinky_pip: 'pinky_dip',
+}
+
+/**
+ * Linker Hand L10 Joint Mappings (20 DOF - intermediate structure)
+ * Thumb: cmc_roll, cmc_yaw, cmc_pitch, mcp, ip (5 DOF)
+ * Index: mcp_roll, mcp_pitch, pip, dip (4 DOF)
+ * Middle: mcp_pitch, pip, dip (3 DOF)
+ * Ring: mcp_roll, mcp_pitch, pip, dip (4 DOF)
+ * Pinky: mcp_roll, mcp_pitch, pip, dip (4 DOF)
+ */
+const LINKER_L10_JOINT_MAP = {
+  // Thumb - 5 DOF
+  thumb_mcp: 'thumb_cmc_pitch',   // Using cmc_pitch as primary control
+  thumb_pip: 'thumb_mcp',
+  thumb_dip: 'thumb_ip',
+
+  // Index finger - 4 DOF
+  index_mcp: 'index_mcp_pitch',
+  index_pip: 'index_pip',
+  index_dip: 'index_dip',
+
+  // Middle finger - 3 DOF
+  middle_mcp: 'middle_mcp_pitch',
+  middle_pip: 'middle_pip',
+  middle_dip: 'middle_dip',
+
+  // Ring finger - 4 DOF
+  ring_mcp: 'ring_mcp_pitch',
+  ring_pip: 'ring_pip',
+  ring_dip: 'ring_dip',
+
+  // Pinky - 4 DOF
+  pinky_mcp: 'pinky_mcp_pitch',
+  pinky_pip: 'pinky_pip',
+  pinky_dip: 'pinky_dip',
+}
+
+/**
+ * Linker Hand L20/L21/L25/L30/O6/O7 Joint Mappings (21 DOF - full articulation)
+ * All fingers: mcp_roll, mcp_pitch, pip, dip (4 DOF each)
+ * Thumb: cmc_yaw, cmc_roll, cmc_pitch, mcp, ip (5 DOF)
+ */
+const LINKER_L20_JOINT_MAP = {
+  // Thumb - 5 DOF
+  thumb_mcp: 'thumb_cmc_pitch',   // Using cmc_pitch as primary control
+  thumb_pip: 'thumb_mcp',
+  thumb_dip: 'thumb_ip',
+
+  // Index finger - 4 DOF
+  index_mcp: 'index_mcp_pitch',
+  index_pip: 'index_pip',
+  index_dip: 'index_dip',
+
+  // Middle finger - 4 DOF
+  middle_mcp: 'middle_mcp_pitch',
+  middle_pip: 'middle_pip',
+  middle_dip: 'middle_dip',
+
+  // Ring finger - 4 DOF
+  ring_mcp: 'ring_mcp_pitch',
+  ring_pip: 'ring_pip',
+  ring_dip: 'ring_dip',
+
+  // Pinky - 4 DOF
+  pinky_mcp: 'pinky_mcp_pitch',
+  pinky_pip: 'pinky_pip',
+  pinky_dip: 'pinky_dip',
+}
+
+/**
  * Model-specific joint mappings
  */
 const JOINT_MAPPINGS = {
@@ -152,6 +247,16 @@ const JOINT_MAPPINGS = {
   dclaw_gripper: {}, // TODO: Add DClaw mappings
   barrett_hand: {}, // TODO: Add Barrett mappings
   panda_gripper: {}, // TODO: Add Panda mappings
+  // Linker Hand models
+  linker_l6: LINKER_L6_JOINT_MAP,
+  linker_l10: LINKER_L10_JOINT_MAP,
+  linker_l20: LINKER_L20_JOINT_MAP,
+  linker_l20pro: LINKER_L20_JOINT_MAP,  // Same structure as L20
+  linker_l21: LINKER_L20_JOINT_MAP,     // Same structure as L20
+  linker_l25: LINKER_L20_JOINT_MAP,     // Same structure as L20
+  linker_l30: LINKER_L20_JOINT_MAP,     // Same structure as L20
+  linker_o6: LINKER_L20_JOINT_MAP,      // Same structure as L20
+  linker_o7: LINKER_L20_JOINT_MAP,      // Same structure as L20
 }
 
 /**
