@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { Hands } from '@mediapipe/hands'
-import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils'
+import { drawConnectors } from '@mediapipe/drawing_utils'
 import { landmarksToJointRotations } from '../utils/handKinematics'
 import { MotionFilter } from '../utils/motionFilter'
 import { CalibrationManager } from '../utils/coordinateMapping'
@@ -88,11 +88,38 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
             lineWidth: 2
           })
 
-          // Draw landmark points
-          drawLandmarks(ctx, landmarks, {
-            color: '#FF0000',
-            lineWidth: 1,
-            radius: 3
+          // Draw landmark points with depth-based size, color, and opacity
+          landmarks.forEach(landmark => {
+            // Get depth value (z coordinate)
+            // MediaPipe z: negative = toward camera, positive = away from camera
+            // Typical range: [-0.2, 0.2]
+            const depth = landmark.z
+
+            // Normalize depth to 0-1 range (0 = close, 1 = far)
+            // Clamp depth to reasonable range and invert so closer = higher value
+            const normalizedDepth = Math.max(0, Math.min(1, (-depth + 0.2) / 0.4))
+
+            // Map depth to size (closer = larger: 2-15px)
+            const radius = 2 + normalizedDepth * 11
+
+            // Map depth to color brightness (closer = brighter red 255, further = darker red 100)
+            const redValue = Math.floor(100 + normalizedDepth * 155)
+
+            // Map depth to opacity (closer = opaque 1.0, further = transparent 0.3)
+            const opacity = 0.3 + normalizedDepth * 0.7
+
+            // Convert normalized coordinates to canvas coordinates
+            const x = landmark.x * canvas.width
+            const y = landmark.y * canvas.height
+
+            // Draw the landmark point
+            ctx.beginPath()
+            ctx.arc(x, y, radius, 0, 2 * Math.PI)
+            ctx.fillStyle = `rgba(${redValue}, 0, 0, ${opacity})`
+            ctx.fill()
+            ctx.strokeStyle = `rgba(${Math.max(0, redValue - 50)}, 0, 0, ${opacity})`
+            ctx.lineWidth = 1
+            ctx.stroke()
           })
 
           // Draw hand label above the highest point
