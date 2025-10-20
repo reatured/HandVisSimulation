@@ -109,7 +109,8 @@ export default function ControlPanel({
   disableWristRotation,
   onDisableWristRotationChange,
   mirrorMode,
-  onMirrorModeChange
+  onMirrorModeChange,
+  onApplyMetalMaterial
 }) {
   // State for modal visibility
   const [isLeftModalOpen, setIsLeftModalOpen] = useState(false)
@@ -388,6 +389,41 @@ export default function ControlPanel({
             <span style={{ fontSize: '14px' }}>▼</span>
           </button>
         </div>
+      </div>
+
+      {/* Apply Metal Material Button */}
+      <div style={{ marginBottom: '12px' }}>
+        <button
+          onClick={onApplyMetalMaterial}
+          style={{
+            width: '100%',
+            padding: '8px',
+            fontSize: '11px',
+            backgroundColor: 'rgba(192, 192, 192, 0.3)',
+            color: 'white',
+            border: '1px solid rgba(220, 220, 220, 0.5)',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            fontWeight: '600',
+            textTransform: 'uppercase',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(192, 192, 192, 0.5)'
+            e.currentTarget.style.borderColor = 'rgba(220, 220, 220, 0.8)'
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(192, 192, 192, 0.3)'
+            e.currentTarget.style.borderColor = 'rgba(220, 220, 220, 0.5)'
+          }}
+        >
+          <span style={{ fontSize: '14px' }}>🔩</span>
+          Apply Metal Material
+        </button>
       </div>
 
       {/* Switch Hand Controls - Hidden for now */}

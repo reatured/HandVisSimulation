@@ -16,7 +16,8 @@ export default function URDFHandModel({
   side = 'left',
   jointRotations = {},
   position = [0, 0, 0],
-  cameraPosition = null
+  cameraPosition = null,
+  onRobotLoaded = null
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -112,6 +113,11 @@ export default function URDFHandModel({
 
         setRobot(loadedRobot)
         setLoading(false)
+
+        // Notify parent component that robot is loaded
+        if (onRobotLoaded) {
+          onRobotLoaded(loadedRobot)
+        }
       },
       (progress) => {
         // Optional: track loading progress
@@ -234,4 +240,43 @@ export default function URDFHandModel({
   }
 
   return null
+}
+
+/**
+ * Apply metal material to all meshes in a robot model
+ * @param {Object} robotModel - The URDF robot model object
+ */
+export function applyMetalMaterial(robotModel) {
+  if (!robotModel) {
+    console.warn('Cannot apply metal material: robot model is null')
+    return
+  }
+
+  // Create a stainless steel-like metal material
+  const metalMaterial = new THREE.MeshStandardMaterial({
+    color: 0xc0c0c0, // Light gray/silver color
+    metalness: 0.95, // Very metallic
+    roughness: 0.1, // Polished/smooth surface
+    envMapIntensity: 1.0
+  })
+
+  // Traverse all children and replace materials
+  robotModel.traverse((child) => {
+    if (child.isMesh) {
+      // Dispose old material to prevent memory leaks
+      if (child.material) {
+        if (Array.isArray(child.material)) {
+          child.material.forEach(m => m.dispose())
+        } else {
+          child.material.dispose()
+        }
+      }
+
+      // Apply new metal material
+      child.material = metalMaterial
+      child.material.needsUpdate = true
+    }
+  })
+
+  console.log('Metal material applied to robot model')
 }

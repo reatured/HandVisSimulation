@@ -5,6 +5,7 @@ import ControlPanel from './components/ControlPanel'
 import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
 import { getShortestRotation } from './utils/handKinematics'
+import { applyMetalMaterial } from './components/URDFHandModel'
 
 // Detect if user is on mobile device
 const isMobileDevice = () => {
@@ -45,6 +46,45 @@ const HAND_MODELS = [
   { id: 'linker_o6_right', name: 'Linker Hand O6 (Right)', path: 'linker_o6', side: 'right' },
   { id: 'linker_o7_left', name: 'Linker Hand O7 (Left)', path: 'linker_o7', side: 'left' },
   { id: 'linker_o7_right', name: 'Linker Hand O7 (Right)', path: 'linker_o7', side: 'right' },
+]
+
+// Model display order and visibility configuration
+// Format: [modelId, isVisible]
+// - Order in this array determines display order in the modal
+// - true = visible in modal, false = hidden
+// - Models not listed here will be hidden by default
+const MODEL_DISPLAY_ORDER = [
+  ['ability_left', true],
+  ['ability_right', true],
+  ['shadow_left', true],
+  ['shadow_right', true],
+  ['allegro_left', true],
+  ['allegro_right', true],
+  ['inspire_left', true],
+  ['inspire_right', true],
+  ['leap_left', true],
+  ['leap_right', true],
+  ['schunk_left', true],
+  ['schunk_right', true],
+  ['barrett', true],
+  ['dclaw', true],
+  ['panda', true],
+  ['linker_l6_left', true],
+  ['linker_l6_right', true],
+  ['linker_l10_left', true],
+  ['linker_l10_right', true],
+  ['linker_l20_left', true],
+  ['linker_l20_right', true],
+  ['linker_l20pro_right', true],
+  ['linker_l21_left', true],
+  ['linker_l21_right', true],
+  ['linker_l25_left', true],
+  ['linker_l25_right', true],
+  ['linker_l30_right', true],
+  ['linker_o6_left', true],
+  ['linker_o6_right', true],
+  ['linker_o7_left', true],
+  ['linker_o7_right', true],
 ]
 
 // Initialize joint rotations for all 21 joints
@@ -129,6 +169,10 @@ export default function App() {
   const [showControlPanel, setShowControlPanel] = useState(!isMobile)
   const [showDebugPanel] = useState(true) // Debug panel enabled
 
+  // Robot references for applying material changes
+  const leftRobotRef = useRef(null)
+  const rightRobotRef = useRef(null)
+
   // Initialize calibration manager (persistent across renders)
   const calibrationManagerRef = useRef(new CalibrationManager())
 
@@ -146,6 +190,21 @@ export default function App() {
     HAND_MODELS.find(m => m.id === selectedRightModel),
     [selectedRightModel]
   )
+
+  // Filter and sort models based on MODEL_DISPLAY_ORDER
+  const visibleModels = useMemo(() => {
+    // Create a map for quick lookup of order and visibility
+    const orderMap = new Map(MODEL_DISPLAY_ORDER)
+
+    // Filter visible models and sort by order
+    return HAND_MODELS
+      .filter(model => orderMap.get(model.id) === true)
+      .sort((a, b) => {
+        const indexA = MODEL_DISPLAY_ORDER.findIndex(([id]) => id === a.id)
+        const indexB = MODEL_DISPLAY_ORDER.findIndex(([id]) => id === b.id)
+        return indexA - indexB
+      })
+  }, [])
 
   // Determine which joint rotations to use based on control mode
   const activeJointRotations = useMemo(() => {
@@ -227,6 +286,34 @@ export default function App() {
     setRightHandZRotation(prev => getShortestRotation(prev, increment))
   }, [])
 
+  // Handlers for robot loaded callbacks
+  const handleLeftRobotLoaded = useCallback((robot) => {
+    leftRobotRef.current = robot
+  }, [])
+
+  const handleRightRobotLoaded = useCallback((robot) => {
+    rightRobotRef.current = robot
+  }, [])
+
+  // Handler for applying metal material to both hand models
+  const handleApplyMetalMaterial = useCallback(() => {
+    let applied = false
+
+    if (leftRobotRef.current) {
+      applyMetalMaterial(leftRobotRef.current)
+      applied = true
+    }
+
+    if (rightRobotRef.current) {
+      applyMetalMaterial(rightRobotRef.current)
+      applied = true
+    }
+
+    if (!applied) {
+      console.warn('No robot models loaded to apply metal material')
+    }
+  }, [])
+
   // Handler to reset both hand gimbals and wrist orientation to zero rotation
   const handleResetGimbals = useCallback(() => {
     setLeftHandGimbal(leftHandZRotation)
@@ -267,6 +354,8 @@ export default function App() {
         rightHandZRotation={rightHandZRotation}
         disableWristRotation={disableWristRotation}
         mirrorMode={mirrorMode}
+        onLeftRobotLoaded={handleLeftRobotLoaded}
+        onRightRobotLoaded={handleRightRobotLoaded}
       />
 
       <HandTrackingCamera
@@ -312,6 +401,7 @@ export default function App() {
           onDisableWristRotationChange={setDisableWristRotation}
           mirrorMode={mirrorMode}
           onMirrorModeChange={setMirrorMode}
+          onApplyMetalMaterial={handleApplyMetalMaterial}
         />
       )}
 

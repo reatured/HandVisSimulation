@@ -11,7 +11,8 @@ function HandModelInner({
   side = 'left',
   jointRotations = {},
   cameraPosition = null,
-  zRotationOffset = 0
+  zRotationOffset = 0,
+  onRobotLoaded = null
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -26,6 +27,7 @@ function HandModelInner({
               jointRotations={jointRotations}
               position={[0, 0, 0]}
               cameraPosition={cameraPosition}
+              onRobotLoaded={onRobotLoaded}
             />
           )
         }
@@ -61,6 +63,7 @@ function HandModelInner({
               jointRotations={jointRotations}
               position={[0, 0, 0]}
               cameraPosition={cameraPosition}
+              onRobotLoaded={onRobotLoaded}
             />
           )
         }
