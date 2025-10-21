@@ -1,7 +1,5 @@
 node_modules
 /build
-/.agent-files
 /.claude
-/.claude
-/agent-file
+/.TodoList
 /agent-file

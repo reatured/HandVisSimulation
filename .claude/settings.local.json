@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Read(//Users/lingyizhou/Documents/**)"
-    ], 
-    "deny": [],
-    "ask": []
-  }
-}
