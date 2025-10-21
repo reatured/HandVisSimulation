@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { getURDFPath } from '../utils/urdfConfig'
 import { mapUIJointToURDF, clampJointValue } from '../utils/urdfJointMapping'
+import { parseJointConfig, createSemanticMapping } from '../utils/urdfParser'
 
 /**
  * URDFHandModel Component
@@ -104,19 +105,25 @@ export default function URDFHandModel({
     loader.load(
       urdfPath,
       (loadedRobot) => {
-        // console.log('URDF loaded successfully:', urdfPath)
-        // console.log('Robot joints:', Object.keys(loadedRobot.joints))
+        console.log('URDF loaded successfully:', urdfPath)
+        console.log('Robot joints:', Object.keys(loadedRobot.joints))
 
         // Apply default rotation and scale adjustments if needed
         loadedRobot.rotation.set(0, 0, 0)
         loadedRobot.position.set(0, 0, 0)
+
+        // 🔥 STEP 3: Parse URDF to extract joint configuration
+        console.log('\n🚀 ========== STARTING URDF PARSING ==========');
+        const jointConfig = parseJointConfig(loadedRobot)
+        const semanticMapping = createSemanticMapping(jointConfig)
+        console.log('🚀 ========== PARSING COMPLETE ==========\n');
 
         setRobot(loadedRobot)
         setLoading(false)
 
         // Notify parent component that robot is loaded
         if (onRobotLoaded) {
-          onRobotLoaded(loadedRobot)
+          onRobotLoaded(loadedRobot, { jointConfig, semanticMapping })
         }
       },
       (progress) => {
