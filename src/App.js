@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import HandTrackingCamera from './components/HandTrackingCamera'
 import Scene3D from './components/Scene3D'
-import ControlPanel from './components/ControlPanel'
+import InspectorPanel from './components/InspectorPanel'
 import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
 import { getShortestRotation } from './utils/handKinematics'
@@ -374,7 +374,7 @@ export default function App() {
       />
 
       {showControlPanel && (
-        <ControlPanel
+        <InspectorPanel
           jointRotations={activeJointRotations}
           selectedJoint={selectedJoint}
           onSelectedJointChange={setSelectedJoint}
