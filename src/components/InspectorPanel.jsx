@@ -51,6 +51,14 @@ const MODEL_JOINT_AVAILABILITY = {
     ring_mcp: true, ring_pip: true, ring_dip: false, ring_tip: false,
     pinky_mcp: true, pinky_pip: true, pinky_dip: false, pinky_tip: false,
   },
+  linker_o6: {
+    wrist: false,
+    thumb_mcp: true, thumb_pip: true, thumb_dip: true, thumb_tip: false,
+    index_mcp: true, index_pip: true, index_dip: true, index_tip: false,
+    middle_mcp: true, middle_pip: true, middle_dip: true, middle_tip: false,
+    ring_mcp: true, ring_pip: true, ring_dip: true, ring_tip: false,
+    pinky_mcp: true, pinky_pip: true, pinky_dip: true, pinky_tip: false,
+  },
   default: {
     wrist: false,
     thumb_mcp: false, thumb_pip: false, thumb_dip: false, thumb_tip: false,
@@ -95,7 +103,12 @@ const InspectorPanel = ({
   onDisableWristRotationChange,
   mirrorMode,
   onMirrorModeChange,
-  onApplyMetalMaterial
+  onApplyMetalMaterial,
+  useMultiDoF,
+  onUseMultiDoFChange,
+  leftHandJointConfig,
+  rightHandJointConfig,
+  onMultiDoFChange
 }) => {
   // Collapsible section states (all open by default)
   const [controlsOpen, setControlsOpen] = useState(true)
@@ -136,7 +149,7 @@ const InspectorPanel = ({
       </div>
 
       {/* Scrollable content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 pb-32">
         <div className="p-2 space-y-2">
           {/* Controls Section */}
           <Collapsible open={controlsOpen} onOpenChange={setControlsOpen}>
@@ -435,73 +448,70 @@ const InspectorPanel = ({
             </Collapsible>
           )}
 
-          {/* Display Settings Section */}
-          <Collapsible open={displayOpen} onOpenChange={setDisplayOpen}>
-            <Card className="bg-panel-muted/50 border-panel-border hover:border-panel-border/60 transition-colors">
-              <CollapsibleTrigger className="w-full">
-                <div className="flex items-center justify-between p-2 cursor-pointer">
-                  <div className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4 text-panel-muted-foreground" />
-                    <span className="text-sm font-medium text-panel-foreground">Display</span>
+          {/* Multi-DoF Joint Controls - Show when Multi-DoF is ON and in Manual mode */}
+          {isManualMode && useMultiDoF && (selectedHand === 'left' ? leftHandJointConfig : rightHandJointConfig) && (
+            <Collapsible open={true}>
+              <Card className="bg-panel-muted/50 border-panel-border hover:border-panel-border/60 transition-colors">
+                <div className="p-2">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Focus className="w-4 h-4 text-panel-muted-foreground" />
+                    <span className="text-sm font-medium text-panel-foreground">Multi-DoF Controls</span>
                   </div>
-                  <ChevronDown
-                    className={cn(
-                      "w-4 h-4 text-panel-muted-foreground transition-transform",
-                      displayOpen && "transform rotate-180"
-                    )}
-                  />
+                  <div className="space-y-3">
+                    {(() => {
+                      const config = selectedHand === 'left' ? leftHandJointConfig : rightHandJointConfig
+                      if (!config || !config.semanticMapping) return null
+
+                      return Object.entries(config.semanticMapping).map(([jointName, mapping]) => {
+                        // Only show multi-axis joints (more than one axis)
+                        if (mapping.axes.length <= 1) return null
+
+                        return (
+                          <div key={jointName} className="p-2 bg-panel/50 rounded border border-panel-border/30">
+                            <div className="text-xs font-semibold text-panel-foreground mb-2">
+                              {jointName.replace(/_/g, ' ').toUpperCase()}
+                            </div>
+                            {mapping.axes.map(axis => {
+                              const urdfJoint = mapping.urdfJoints[axis]
+                              const [lower, upper] = mapping.limits[axis] || [-1.5, 1.5]
+                              const currentValue = currentHandRotations[jointName]?.[axis] || 0
+
+                              return (
+                                <div key={axis} className="mb-2 last:mb-0">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <label className="text-[10px] font-medium text-panel-muted-foreground">
+                                      {axis.toUpperCase()}
+                                    </label>
+                                    <span className="text-[10px] text-panel-muted-foreground">
+                                      {(currentValue * 180 / Math.PI).toFixed(0)}°
+                                    </span>
+                                  </div>
+                                  <Slider
+                                    value={[currentValue]}
+                                    onValueChange={(values) => {
+                                      onMultiDoFChange(selectedHand, jointName, axis, values[0])
+                                    }}
+                                    min={lower}
+                                    max={upper}
+                                    step={0.01}
+                                    className="w-full"
+                                  />
+                                  <div className="flex justify-between text-[8px] text-panel-muted-foreground/60 mt-0.5">
+                                    <span>{(lower * 180 / Math.PI).toFixed(0)}°</span>
+                                    <span>{(upper * 180 / Math.PI).toFixed(0)}°</span>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      })
+                    })()}
+                  </div>
                 </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="px-2 pb-2 space-y-2">
-                  <Button
-                    variant={showGimbals ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => onShowGimbalsChange(!showGimbals)}
-                    className="w-full text-xs justify-start"
-                  >
-                    {showGimbals ? '✓' : '✗'} Gimbals
-                  </Button>
-                  <Button
-                    variant={showAxes ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => onShowAxesChange(!showAxes)}
-                    className="w-full text-xs justify-start"
-                  >
-                    {showAxes ? '✓' : '✗'} Axes
-                  </Button>
-                  <Button
-                    variant={showDebugLabels ? "default" : "secondary"}
-                    size="sm"
-                    onClick={() => onShowDebugLabelsChange(!showDebugLabels)}
-                    className="w-full text-xs justify-start"
-                  >
-                    {showDebugLabels ? '✓' : '✗'} Labels
-                  </Button>
-                  {isCameraMode && (
-                    <>
-                      <Button
-                        variant={enableCameraPosition ? "default" : "secondary"}
-                        size="sm"
-                        onClick={() => onEnableCameraPositionChange(!enableCameraPosition)}
-                        className="w-full text-xs justify-start"
-                      >
-                        {enableCameraPosition ? '✓' : '✗'} Position
-                      </Button>
-                      <Button
-                        variant={disableWristRotation ? "secondary" : "default"}
-                        size="sm"
-                        onClick={() => onDisableWristRotationChange(!disableWristRotation)}
-                        className="w-full text-xs justify-start"
-                      >
-                        {disableWristRotation ? '✗' : '✓'} Wrist
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
+              </Card>
+            </Collapsible>
+          )}
 
           {/* Info */}
           {isCameraMode && (
@@ -517,6 +527,111 @@ const InspectorPanel = ({
           </div>
         </div>
       </ScrollArea>
+
+      {/* Floating Display Settings - Always Visible at Bottom */}
+      <div className="absolute bottom-0 left-0 right-0 bg-panel/95 backdrop-blur-sm border-t border-panel-border shadow-lg">
+        <div className="p-2">
+          <div className="flex items-center gap-1.5 mb-2 px-1">
+            <Eye className="w-3.5 h-3.5 text-panel-muted-foreground" />
+            <span className="text-xs font-medium text-panel-foreground">Display</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {/* Gimbals */}
+            <button
+              onClick={() => onShowGimbalsChange(!showGimbals)}
+              className={cn(
+                "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                showGimbals
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+              )}
+            >
+              Gimbals
+            </button>
+
+            {/* Axes */}
+            <button
+              onClick={() => onShowAxesChange(!showAxes)}
+              className={cn(
+                "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                showAxes
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+              )}
+            >
+              Axes
+            </button>
+
+            {/* Labels */}
+            <button
+              onClick={() => onShowDebugLabelsChange(!showDebugLabels)}
+              className={cn(
+                "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                showDebugLabels
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+              )}
+            >
+              Labels
+            </button>
+
+            {/* Multi-DoF */}
+            <button
+              onClick={() => {
+                const newValue = !useMultiDoF
+                onUseMultiDoFChange(newValue)
+                console.log('🎛️ [InspectorPanel] Multi-DoF toggled:', newValue)
+              }}
+              className={cn(
+                "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                useMultiDoF
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+              )}
+            >
+              Multi-DoF
+            </button>
+
+            {/* Position (camera mode only) */}
+            {isCameraMode ? (
+              <button
+                onClick={() => onEnableCameraPositionChange(!enableCameraPosition)}
+                className={cn(
+                  "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                  enableCameraPosition
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+                )}
+              >
+                Position
+              </button>
+            ) : (
+              <div className="px-2 py-1.5 rounded bg-muted/10 text-[10px] text-muted-foreground/50 text-center">
+                Position
+              </div>
+            )}
+
+            {/* Wrist (camera mode only) */}
+            {isCameraMode ? (
+              <button
+                onClick={() => onDisableWristRotationChange(!disableWristRotation)}
+                className={cn(
+                  "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                  !disableWristRotation
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+                )}
+              >
+                Wrist
+              </button>
+            ) : (
+              <div className="px-2 py-1.5 rounded bg-muted/10 text-[10px] text-muted-foreground/50 text-center">
+                Wrist
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Model Selector Modals */}
       <ModelSelectorModal

@@ -176,6 +176,11 @@ export default function App() {
   const leftRobotRef = useRef(null)
   const rightRobotRef = useRef(null)
 
+  // 🔥 STEP 9: Joint config state for multi-DoF support
+  const [leftHandJointConfig, setLeftHandJointConfig] = useState(null)
+  const [rightHandJointConfig, setRightHandJointConfig] = useState(null)
+  const [useMultiDoF, setUseMultiDoF] = useState(false)
+
   // Initialize calibration manager (persistent across renders)
   // Use lazy initialization to avoid creating new instance on every render
   const calibrationManagerRef = useRef(null)
@@ -255,6 +260,21 @@ export default function App() {
     }))
   }, [selectedJoint, selectedHand])
 
+  // Handler for multi-DoF joint axis changes
+  const handleMultiDoFChange = useCallback((hand, jointName, axis, value) => {
+    console.log(`🎛️ [App.js] Multi-DoF change: ${hand}.${jointName}.${axis} = ${value}`)
+    setManualJointRotations(prev => ({
+      ...prev,
+      [hand]: {
+        ...prev[hand],
+        [jointName]: {
+          ...(typeof prev[hand][jointName] === 'object' ? prev[hand][jointName] : {}),
+          [axis]: value
+        }
+      }
+    }))
+  }, [])
+
   const handleHandResults = useCallback((results) => {
     setHandTrackingData(results)
   }, [])
@@ -298,12 +318,28 @@ export default function App() {
   }, [])
 
   // Handlers for robot loaded callbacks
-  const handleLeftRobotLoaded = useCallback((robot) => {
+  const handleLeftRobotLoaded = useCallback((robot, config) => {
     leftRobotRef.current = robot
+
+    // 🔥 STEP 10: Store parsed joint config
+    if (config) {
+      console.log('✅ [App.js] Left hand joint config received:', config)
+      console.log('   - Joint config:', config.jointConfig)
+      console.log('   - Semantic mapping:', config.semanticMapping)
+      setLeftHandJointConfig(config)
+    }
   }, [])
 
-  const handleRightRobotLoaded = useCallback((robot) => {
+  const handleRightRobotLoaded = useCallback((robot, config) => {
     rightRobotRef.current = robot
+
+    // 🔥 STEP 10: Store parsed joint config
+    if (config) {
+      console.log('✅ [App.js] Right hand joint config received:', config)
+      console.log('   - Joint config:', config.jointConfig)
+      console.log('   - Semantic mapping:', config.semanticMapping)
+      setRightHandJointConfig(config)
+    }
   }, [])
 
   // Handler for applying metal material to both hand models
@@ -367,6 +403,7 @@ export default function App() {
         mirrorMode={mirrorMode}
         onLeftRobotLoaded={handleLeftRobotLoaded}
         onRightRobotLoaded={handleRightRobotLoaded}
+        useMultiDoF={useMultiDoF}
       />
 
       <HandTrackingCamera
@@ -413,6 +450,11 @@ export default function App() {
           mirrorMode={mirrorMode}
           onMirrorModeChange={setMirrorMode}
           onApplyMetalMaterial={handleApplyMetalMaterial}
+          useMultiDoF={useMultiDoF}
+          onUseMultiDoFChange={setUseMultiDoF}
+          leftHandJointConfig={leftHandJointConfig}
+          rightHandJointConfig={rightHandJointConfig}
+          onMultiDoFChange={handleMultiDoFChange}
         />
       )}
 

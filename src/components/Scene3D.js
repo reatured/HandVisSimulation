@@ -102,7 +102,8 @@ export default function Scene3D({
   disableWristRotation = false,
   mirrorMode = true,
   onLeftRobotLoaded = null,
-  onRightRobotLoaded = null
+  onRightRobotLoaded = null,
+  useMultiDoF = false
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -201,6 +202,7 @@ export default function Scene3D({
               cameraPosition={enableCameraPosition ? leftHandPosition : null}
               zRotationOffset={leftHandZRotation}
               onRobotLoaded={onLeftRobotLoaded}
+              useMultiDoF={useMultiDoF}
             />
           </GimbalControl>
         </group>
@@ -229,6 +231,7 @@ export default function Scene3D({
               cameraPosition={enableCameraPosition ? rightHandPosition : null}
               zRotationOffset={rightHandZRotation}
               onRobotLoaded={onRightRobotLoaded}
+              useMultiDoF={useMultiDoF}
             />
           </GimbalControl>
         </group>

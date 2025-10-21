@@ -76,7 +76,7 @@ The control panel on the left allows you to customize the simulation:
 │   └── index.html             # Main HTML file
 ├── src/
 │   ├── components/            # React components
-│   │   ├── ControlPanel.js    # UI for controlling the simulation
+│   │   ├── InspectorPanel.jsx # UI for controlling the simulation
 │   │   ├── DebugPanel.js      # Displays real-time orientation data
 │   │   ├── HandTrackingCamera.js # Handles webcam feed and MediaPipe integration
 │   │   └── Scene3D.js         # Manages the Three.js scene and 3D models
@@ -94,7 +94,7 @@ The control panel on the left allows you to customize the simulation:
 -   **`App.js`**: The root component that manages the entire application's state, including control modes, selected models, joint rotations, and all UI toggles. It orchestrates data flow between the camera, UI, and 3D scene.
 -   **`HandTrackingCamera.js`**: A headless component that initializes the webcam, runs the MediaPipe Hand Landmarker, processes the results, and passes tracking data up to `App.js`.
 -   **`Scene3D.js`**: Renders the 3D environment, including the hand models, gimbals, and axes. It receives joint rotation data and applies it to the corresponding models. It also handles user interaction with the 3D scene (camera controls, gimbal manipulation).
--   **`ControlPanel.js`**: The main UI panel containing all the toggles, sliders, and buttons that allow the user to configure the simulation.
+-   **`InspectorPanel.jsx`**: The main UI panel containing all the toggles, sliders, and buttons that allow the user to configure the simulation. Built with shadcn/ui components and a dark professional theme.
 -   **`DebugPanel.js`**: A simple UI overlay that displays the current Euler rotation angles of the wrists and provides a button to reset the orientation.
 -   **`coordinateMapping.js`**: Contains the core logic for converting the 21 hand landmarks from MediaPipe into a standardized set of joint rotations. It also includes the `CalibrationManager` class.
 -   **`handKinematics.js`**: Provides utility functions for kinematic calculations, such as calculating angles between vectors and ensuring smooth rotations.
@@ -165,7 +165,7 @@ To run this project locally, follow these steps:
 - Shows placeholders for unimplemented models
 - Wraps components in Suspense for async loading
 
-**`ControlPanel.js`**
+**`InspectorPanel.jsx`**
 - Interactive control panel for hand manipulation
 - Model selection for left and right hands
 - Camera tracking vs manual control modes
@@ -173,6 +173,7 @@ To run this project locally, follow these steps:
 - Gimbal and axes visibility toggles
 - Manual Z-axis rotation controls (±90° buttons)
 - Hand control mapping (swap left/right)
+- Built with shadcn/ui components and dark professional theme
 
 **`GimbalControl.js`**
 - Interactive 3D gimbal widget using PivotControls
@@ -606,6 +607,384 @@ This table documents all rotation offsets at each hierarchy level for both left 
 - **Visual Feedback**: Axes helpers and gimbal rings provide clear visual reference for orientation
 - **Hierarchical Transforms**: Child transformations are relative to parent transformations, allowing complex poses
 - **Camera Independence**: Position and rotation can be tracked from camera or set manually
+
+---
+
+## 📊 Complete Data Flow Architecture
+
+This section provides a comprehensive overview of how data flows through the entire application, from camera input to 3D visualization.
+
+### High-Level Data Flow Pipeline
+
+```
+Camera Input (MediaPipe)
+  ↓
+Landmark Detection (21 points per hand)
+  ↓
+Kinematics Conversion (landmarks → joint angles)
+  ↓
+Motion Filtering (smoothing + velocity limiting + constraints)
+  ↓
+Calibration (optional offset adjustment)
+  ↓
+URDF Joint Mapping (UI names → model-specific joint names)
+  ↓
+3D Visualization (Three.js rendering)
+```
+
+### Processing Stages Overview
+
+| Stage | Component | Input | Output | Location |
+|-------|-----------|-------|--------|----------|
+| **1. Camera Capture** | `HandTrackingCamera.js` | Webcam video stream | Video frames | Line 250-275 |
+| **2. Hand Detection** | MediaPipe Hands | Video frames | 21 3D landmarks per hand | Line 62 |
+| **3. Position Extraction** | Landmark processing | Wrist landmark | {x, y, z} position | Line 174-184 |
+| **4. Wrist Orientation** | `handKinematics.js` | Landmarks 0,5,9,17 | Euler {x:0, y:0, z} (Z-only) | Line 131-203 |
+| **5. Joint Angles** | Kinematics calculations | All 21 landmarks | 20 joint angles | Line 214-345 |
+| **6. Motion Filtering** | `motionFilter.js` | Raw angles | Smoothed angles | HandTrackingCamera:189-190 |
+| **7. Calibration** | `coordinateMapping.js` | Smoothed angles | Calibrated angles | HandTrackingCamera:193-195 |
+| **8. State Management** | `App.js` | Processed data | React state | State updates |
+| **9. 3D Rendering** | `Scene3D.js` | State data | 3D visualization | Line 84-238 |
+
+### Component Interaction Flow
+
+```
+HandTrackingCamera (Data Producer)
+  ├── Initializes webcam (640x480)
+  ├── Runs MediaPipe detection loop
+  ├── Processes landmarks via handKinematics.js
+  ├── Applies motion filtering
+  ├── Applies calibration (optional)
+  └── Outputs via callbacks:
+      ├── onHandResults(results)         → Raw MediaPipe data
+      ├── onJointRotations({left, right}) → Processed joint angles
+      └── onHandPositions({left, right})  → Wrist positions
+
+App.js (State Manager)
+  ├── Receives camera data via callbacks
+  ├── Manages control modes (Camera vs Manual)
+  ├── Maintains separate states for left/right hands
+  ├── Stores gimbal offsets and Z-rotations
+  └── Passes data to Scene3D and InspectorPanel
+
+Scene3D (3D Renderer)
+  ├── Receives joint rotations and positions
+  ├── Manages dual hand rendering
+  ├── Applies hierarchical transformations:
+  │   ├── Level 1: Wrist rotation (camera tracking)
+  │   ├── Level 2: Gimbal offsets (manual control)
+  │   ├── Level 3: Z-axis rotation (±90° buttons)
+  │   └── Level 4: Individual joint rotations
+  └── Renders with Three.js/React Three Fiber
+
+URDFHandModel (Model Renderer)
+  ├── Loads URDF files and meshes
+  ├── Maps UI joint names to URDF joints
+  ├── Clamps values to joint limits
+  └── Applies rotations to 3D model
+```
+
+### Data Transformation Pipeline Details
+
+#### Transformation 1: MediaPipe Landmarks → Position
+**Location:** `HandTrackingCamera.js:174-184`
+
+```javascript
+// Convert MediaPipe normalized coordinates to Three.js world space
+const position = {
+    x: (wristLandmark.x - 0.5) * 2,   // Center around 0, scale to [-1, 1]
+    y: -(wristLandmark.y - 0.5) * 2,  // Invert Y and center
+    z: -wristLandmark.z * 2            // Invert Z and scale
+}
+```
+
+**Coordinate System Conversion:**
+- MediaPipe X (0-1 left→right) → Three.js X (-1 to 1 left→right)
+- MediaPipe Y (0-1 top→bottom) → Three.js Y (-1 to 1 bottom→top) [inverted]
+- MediaPipe Z (depth) → Three.js Z [inverted, scaled]
+
+#### Transformation 2: Landmarks → Wrist Orientation
+**Location:** `handKinematics.js:131-203`
+
+**Input:** Landmarks 0 (wrist), 5 (index MCP), 9 (middle MCP), 17 (pinky MCP)
+
+**Process:**
+1. Calculate palm plane vectors:
+   - `palmForward = middleMCP - wrist` (points up hand)
+   - `palmRight = indexMCP - pinkyMCP` (points across palm)
+   - `palmNormal = cross(palmForward, palmRight)` (points out of palm)
+2. Build rotation matrix from orthogonal vectors
+3. Extract Euler angles (x, y, z)
+4. Apply handedness correction (left hand: negate z and x)
+5. **Lock to Z-axis only**: Set x=0, y=0 (ensures fingertips point upward)
+
+**Output:** `{x: 0, y: 0, z}` - 1 DoF wrist rotation
+
+#### Transformation 3: Landmarks → Joint Angles
+**Location:** `handKinematics.js:214-345`
+
+**For each finger:**
+- Calculate curl at MCP, PIP, DIP joints
+- Formula: `curl = π - angle_between_vectors`
+- Range: 0 (straight) to positive (bent)
+
+**Output:** 20 joint angles (thumb, index, middle, ring, pinky × 4 segments each)
+
+#### Transformation 4: Motion Filtering
+**Location:** `HandTrackingCamera.js:189-190` → `motionFilter.js`
+
+**3-Stage Pipeline:**
+1. **Exponential Moving Average (EMA)**: `filtered = prev + 0.3 * (new - prev)`
+2. **Velocity Limiter**: Caps max angular velocity at 5.0 rad/s
+3. **Joint Constraints**: Enforces anatomical limits and coupling
+
+**Purpose:** Reduce jitter, prevent unrealistic movements
+
+#### Transformation 5: UI Joint Names → URDF Joint Names
+**Location:** `urdfJointMapping.js`
+
+**Example Mappings:**
+- Shadow Hand: `thumb_mcp` → `THJ4`
+- Ability Hand: `thumb_mcp` → `thumb_q1`
+- Allegro Hand: `index_mcp` → `joint_4.0`
+- Leap Hand: `middle_pip` → `7`
+
+**Purpose:** Translate standardized UI joint names to model-specific URDF naming conventions
+
+---
+
+## 📦 Datasets Inventory
+
+The application uses **10 distinct datasets** that define hand models, joint configurations, limits, and mappings.
+
+### Dataset 1: Hand Models (23 Models)
+**Location:** `App.js` - `HAND_MODELS` array
+
+**Complete List:**
+1. Ability Hand (Left/Right) - 2 variants
+2. Shadow Hand (Left/Right) - 2 variants
+3. Allegro Hand (Left/Right) - 2 variants
+4. Inspire Hand (Left/Right) - 2 variants
+5. Leap Hand (Left/Right) - 2 variants
+6. Schunk SVH Hand (Left/Right) - 2 variants
+7. Barrett Hand - 1 variant
+8. DClaw Gripper - 1 variant
+9. Panda Gripper - 1 variant
+10. Linker Hands - 9 variants:
+    - L6, L10, L20, L20 Pro, L21, L25, L30, O6, O7
+
+**Purpose:** Defines available robotic hand models for selection and rendering
+
+### Dataset 2: MediaPipe Landmark Indices (21 Points)
+**Location:** `handKinematics.js`
+
+**Landmark Structure:**
+```
+0:  Wrist
+1-4:   Thumb  (CMC, MCP, IP, TIP)
+5-8:   Index  (MCP, PIP, DIP, TIP)
+9-12:  Middle (MCP, PIP, DIP, TIP)
+13-16: Ring   (MCP, PIP, DIP, TIP)
+17-20: Pinky  (MCP, PIP, DIP, TIP)
+```
+
+**Data Format:** Each landmark = `{x, y, z}` in normalized coordinates (0-1 range)
+
+**Purpose:** MediaPipe's standardized hand keypoint format for tracking
+
+### Dataset 3: Joint Configuration (21 Joints)
+**Location:** Throughout application (standardized structure)
+
+**Structure:**
+- 1 Wrist joint
+- 20 Finger joints:
+  - 5 fingers × 4 segments each
+  - Segments: MCP (knuckle), PIP (middle), DIP (proximal), TIP (distal)
+
+**Joint Names:**
+```
+wrist
+thumb_mcp, thumb_pip, thumb_dip, thumb_tip
+index_mcp, index_pip, index_dip, index_tip
+middle_mcp, middle_pip, middle_dip, middle_tip
+ring_mcp, ring_pip, ring_dip, ring_tip
+pinky_mcp, pinky_pip, pinky_dip, pinky_tip
+```
+
+**Purpose:** Standardized UI-level joint naming convention used across the application
+
+### Dataset 4: URDF Joint Mappings (6+ Naming Conventions)
+**Location:** `urdfJointMapping.js`
+
+**Mapping Tables:**
+
+| Model | Example Mapping | Pattern |
+|-------|----------------|---------|
+| **Shadow Hand** | `thumb_mcp` → `THJ4` | THJ/FFJ/MFJ/RFJ/LFJ + number |
+| **Ability Hand** | `index_mcp` → `index_q1` | {finger}_q{number} |
+| **Allegro Hand** | `middle_pip` → `joint_7.0` | joint_{number}.0 |
+| **Leap Hand** | `ring_dip` → `11` | Numeric strings 0-15 |
+| **Linker L10** | `pinky_mcp` → `pinky_mcp_pitch` | {finger}_{joint}_{axis} |
+| **Inspire Hand** | Direct mapping | Same as UI names |
+
+**Purpose:** Converts UI joint names to model-specific URDF joint identifiers
+
+### Dataset 5: Joint Limit Constraints
+**Location:** `motionFilter.js` and model-specific configurations
+
+**Anatomical Limits (General):**
+```javascript
+Wrist: -0.5 to 0.5 rad
+MCP joints: 0 to 1.57 rad (~90°)
+PIP joints: 0 to 1.75 rad (~100°)
+DIP joints: 0 to 1.4 rad (~80°)
+```
+
+**Model-Specific Limits (Ability Hand Example):**
+```javascript
+thumb_q1: -2.09 to 0 rad
+thumb_q2: 0 to 2.09 rad
+other_q1: 0 to 2.09 rad (~120°)
+other_q2: 0 to 2.66 rad (~152°)
+```
+
+**Purpose:** Enforces realistic joint ranges, prevents impossible poses
+
+### Dataset 6: URDF File Paths
+**Location:** `urdfConfig.js`
+
+**Format:** `/assets/robots/hands/{model_name}/{variant}.urdf`
+
+**Examples:**
+```
+/assets/robots/hands/ability_hand/left.urdf
+/assets/robots/hands/shadow_hand/right.urdf
+/assets/robots/hands/allegro_hand/left.urdf
+```
+
+**Purpose:** Maps model IDs to their URDF file locations for loading
+
+### Dataset 7: Joint Coupling Relationships
+**Location:** `motionFilter.js`
+
+**Coupling Rules:**
+```javascript
+// DIP follows PIP at 0.67 ratio (anatomically realistic)
+index_dip = index_pip × 0.67
+middle_dip = middle_pip × 0.67
+ring_dip = ring_pip × 0.67
+pinky_dip = pinky_pip × 0.67
+
+// TIP follows DIP at 0.5 ratio
+{finger}_tip = {finger}_dip × 0.5
+```
+
+**Purpose:** Simulates natural finger joint coupling (tendon mechanics)
+
+### Dataset 8: Calibration Data (Persistent Storage)
+**Location:** `coordinateMapping.js` → localStorage
+
+**Data Structure:**
+```javascript
+{
+  offsets: {
+    thumb_mcp: -0.15,
+    index_pip: 0.08,
+    // ... for all joints
+  },
+  restPose: {
+    thumb_mcp: 0.0,
+    index_pip: 0.0,
+    // ... for all joints
+  },
+  timestamp: 1698765432000  // Unix timestamp
+}
+```
+
+**Expiry:** 7 days
+
+**Purpose:** User-calibrated offset correction for improved tracking accuracy
+
+### Dataset 9: Motion Filter Parameters
+**Location:** `motionFilter.js`
+
+**Configuration:**
+```javascript
+{
+  emaAlpha: 0.3,           // Exponential smoothing factor
+  maxVelocity: 5.0,        // Maximum rad/s
+  velocityDecay: 0.85,     // Velocity decay factor
+  constraintsEnabled: true // Apply anatomical limits
+}
+```
+
+**Purpose:** Controls smoothing and physical realism of tracked motion
+
+### Dataset 10: Default Joint Rotations
+**Location:** `App.js` - initial state
+
+**Default State:**
+```javascript
+{
+  wristOrientation: { x: 0, y: 0, z: 0 },
+  joints: {
+    wrist: 0,
+    thumb_mcp: 0, thumb_pip: 0, thumb_dip: 0, thumb_tip: 0,
+    index_mcp: 0, index_pip: 0, index_dip: 0, index_tip: 0,
+    middle_mcp: 0, middle_pip: 0, middle_dip: 0, middle_tip: 0,
+    ring_mcp: 0, ring_pip: 0, ring_dip: 0, ring_tip: 0,
+    pinky_mcp: 0, pinky_pip: 0, pinky_dip: 0, pinky_tip: 0
+  }
+}
+```
+
+**Purpose:** Fallback values when no tracking data is available (neutral pose)
+
+---
+
+## 🔄 Data Transformation Reference
+
+### Complete Transformation Chain
+
+| Stage | File Location | Function | Input Format | Output Format | Notes |
+|-------|--------------|----------|--------------|---------------|-------|
+| **1. Camera Capture** | `HandTrackingCamera.js:250-275` | `startCamera()` | Webcam video | Video frames | 640×480 resolution |
+| **2. Hand Detection** | `HandTrackingCamera.js:62` | `hands.onResults()` | Video frames | MediaPipe results | Up to 2 hands |
+| **3. Landmark Extraction** | MediaPipe AI | Detection model | Frame image | 21 landmarks/hand | {x, y, z} normalized |
+| **4. Position Conversion** | `HandTrackingCamera.js:174-184` | Coordinate mapping | Wrist landmark | {x, y, z} position | Three.js world space |
+| **5. Wrist Orientation** | `handKinematics.js:131-203` | `calculateWristOrientation()` | Landmarks 0,5,9,17 | {x:0, y:0, z} Euler | Z-axis locked (1 DoF) |
+| **6. Joint Angles** | `handKinematics.js:214-345` | `landmarksToJointRotations()` | All 21 landmarks | 20 joint angles | Radians |
+| **7. Motion Filter** | `motionFilter.js` | `filter()` | Raw angles | Smoothed angles | EMA + velocity limit |
+| **8. Calibration** | `coordinateMapping.js` | `applyCalibration()` | Filtered angles | Calibrated angles | Optional user offset |
+| **9. Handedness Correction** | `handKinematics.js:190-194` | Coordinate flip | Left hand angles | Corrected angles | Negate z, x for left |
+| **10. URDF Mapping** | `urdfJointMapping.js` | `mapUIJointToURDF()` | UI joint names | URDF joint names | Model-specific |
+| **11. Joint Clamping** | `URDFHandModel.js` | `clampJointValue()` | Raw angle | Clamped angle | Within joint limits |
+| **12. 3D Application** | `URDFHandModel.js:145-172` | `setJointValue()` | Clamped angles | 3D rotation | Applied to model |
+
+### Coordinate System Conversions
+
+**MediaPipe → Three.js:**
+```
+MediaPipe Coords:       Three.js Coords:
+X: 0 (left) → 1 (right)    X: -1 (left) → 1 (right)
+Y: 0 (top) → 1 (bottom)    Y: -1 (bottom) → 1 (top)  [inverted]
+Z: depth (negative away)   Z: depth (positive away)  [inverted]
+```
+
+**Wrist Orientation (Right-Hand Rule):**
+```
+🔴 Red (X-axis):   Thumb direction (lateral)
+🟢 Green (Y-axis): Palm normal (perpendicular to palm)
+🔵 Blue (Z-axis):  Finger direction (wrist to fingertips)
+```
+
+**Handedness Correction:**
+```
+Right hand: Use angles directly
+Left hand:  Negate z and x in wrist orientation
+```
+
+---
 
 ## Setup
 
