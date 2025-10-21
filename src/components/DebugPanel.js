@@ -1,48 +1,63 @@
 import { useState, useEffect } from 'react'
+import { landmarksToRotations3D } from '../utils/positionToRotation'
 
 /**
  * DebugPanel Component
- * Displays euler angles and joint rotations for selected hand (wrist orientation from camera tracking)
+ * Displays 3-axis rotation data (pitch, yaw, roll) converted from hand landmark positions
  */
 export default function DebugPanel({
-  leftHandRotation,
-  rightHandRotation,
-  jointRotations,
   onReset,
-  onClose
+  onClose,
+  handTrackingData // Raw landmark position data from MediaPipe
 }) {
   // State for selected hand
   const [selectedHand, setSelectedHand] = useState('left')
 
-  // Convert radians to degrees for display
-  const toDegrees = (radians) => (radians * 180 / Math.PI).toFixed(1)
+  // State to persist last valid rotation data
+  const [lastValidRotations, setLastValidRotations] = useState(null)
 
-  // Format rotation value (1 decimal place)
-  const formatRad = (value) => (value || 0).toFixed(1)
+  // Convert radians to degrees and format (1 decimal place)
+  const formatDeg = (radians) => ((radians || 0) * 180 / Math.PI).toFixed(1)
 
-  // Get current hand data
-  const currentHandRotation = selectedHand === 'left' ? leftHandRotation : rightHandRotation
-
-  // Handle both formats:
-  // 1. Camera mode: { left: { joints: {...}, wristOrientation: {...} }, right: {...} }
-  // 2. Manual mode: { left: { wrist: {...}, thumb_mcp: {...}, ... }, right: {...} }
-  const handData = jointRotations?.[selectedHand] || {}
-  const currentJointRotations = handData.joints || handData
-
-  // Debug logging when joint rotations change
-  useEffect(() => {
-    console.log('DebugPanel - jointRotations updated:', jointRotations)
-    console.log('DebugPanel - selectedHand:', selectedHand)
-    console.log('DebugPanel - handData:', handData)
-    console.log('DebugPanel - currentJointRotations:', currentJointRotations)
-    if (currentJointRotations.thumb_mcp) {
-      console.log('DebugPanel - Sample thumb_mcp:', currentJointRotations.thumb_mcp)
+  // Convert position data to 3-axis rotations using the new converter
+  const convertedRotations3D = (() => {
+    if (!handTrackingData || !handTrackingData.multiHandLandmarks) {
+      return null
     }
-  }, [jointRotations, selectedHand])
+
+    // Find the landmarks for the selected hand
+    let selectedLandmarks = null
+    let selectedHandedness = null
+
+    handTrackingData.multiHandLandmarks.forEach((landmarks, index) => {
+      const handedness = handTrackingData.multiHandedness?.[index]?.label || 'Right'
+      const isLeft = handedness === 'Left'
+      const isRight = handedness === 'Right'
+
+      if ((selectedHand === 'left' && isLeft) || (selectedHand === 'right' && isRight)) {
+        selectedLandmarks = landmarks
+        selectedHandedness = handedness
+      }
+    })
+
+    if (!selectedLandmarks) {
+      return null
+    }
+
+    // Convert landmarks to 3-axis rotations
+    return landmarksToRotations3D(selectedLandmarks, selectedHandedness)
+  })()
+
+  // Update last valid rotations when new valid data is available
+  useEffect(() => {
+    if (convertedRotations3D) {
+      setLastValidRotations(convertedRotations3D)
+    }
+  }, [convertedRotations3D])
 
   // Finger names and segments
   const fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-  const segments = ['mcp', 'pip', 'dip', 'tip']
+  const segments = ['tip', 'dip', 'pip', 'mcp']
 
   return (
     <div style={{
@@ -141,6 +156,7 @@ export default function DebugPanel({
         </button>
       </div>
 
+      {/* 3-Axis Rotation Data - Main Display */}
       {/* Joint Rotations Grid */}
       <div style={{
         fontWeight: 'bold',
@@ -149,125 +165,107 @@ export default function DebugPanel({
         borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
         paddingBottom: '2px'
       }}>
-        Joint Rotations (rad)
+        Joint Rotations (deg) - 3-Axis Data
       </div>
 
-      {/* Grid Table */}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontSize: '9px'
-        }}>
-          <thead>
-            <tr>
-              <th style={{
-                padding: '2px',
-                textAlign: 'left',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                color: 'rgba(255, 255, 255, 0.7)',
-                fontSize: '8px'
-              }}></th>
-              {fingers.map(finger => (
-                <th key={finger} style={{
-                  padding: '2px',
-                  textAlign: 'center',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontWeight: 'bold',
-                  fontSize: '9px',
-                  textTransform: 'uppercase'
-                }}>
-                  {finger}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {segments.map(segment => {
-              const segmentUpper = segment.toUpperCase()
-              return (
-                <tr key={segment}>
-                  <td style={{
+          {/* Grid Table */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '9px'
+            }}>
+              <thead>
+                <tr>
+                  <th style={{
                     padding: '2px',
-                    fontWeight: 'bold',
+                    textAlign: 'left',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
                     color: 'rgba(255, 255, 255, 0.7)',
-                    fontSize: '8px',
-                    borderRight: '1px solid rgba(255, 255, 255, 0.2)'
-                  }}>
-                    {segmentUpper}
-                  </td>
-                  {fingers.map(finger => {
-                    const jointName = `${finger}_${segment}`
-                    const jointValue = currentJointRotations[jointName]
-
-                    // Handle both formats:
-                    // Camera mode: number (just pitch/curl angle)
-                    // Manual mode: object with {pitch, yaw, roll}
-                    let jointData
-                    if (typeof jointValue === 'number') {
-                      // Camera mode: single number is the pitch/curl
-                      jointData = { pitch: jointValue, yaw: 0, roll: 0 }
-                    } else if (typeof jointValue === 'object' && jointValue !== null) {
-                      // Manual mode: already has pitch, yaw, roll
-                      jointData = jointValue
-                    } else {
-                      // Fallback
-                      jointData = { pitch: 0, yaw: 0, roll: 0 }
-                    }
-
-                    return (
-                      <td key={jointName} style={{
-                        padding: '2px',
-                        textAlign: 'center',
-                        borderLeft: finger !== 'thumb' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                        lineHeight: '1.3'
-                      }}>
-                        <div style={{ color: '#ff6b6b' }}>P:{formatRad(jointData.pitch)}</div>
-                        <div style={{ color: '#4ecdc4' }}>Y:{formatRad(jointData.yaw)}</div>
-                        <div style={{ color: '#ffe66d' }}>R:{formatRad(jointData.roll)}</div>
-                      </td>
-                    )
-                  })}
+                    fontSize: '8px'
+                  }}></th>
+                  {fingers.map(finger => (
+                    <th key={finger} style={{
+                      padding: '2px',
+                      textAlign: 'center',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontWeight: 'bold',
+                      fontSize: '9px',
+                      textTransform: 'uppercase'
+                    }}>
+                      {finger}
+                    </th>
+                  ))}
                 </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {segments.map(segment => {
+                  const segmentUpper = segment.toUpperCase()
+                  return (
+                    <tr key={segment}>
+                      <td style={{
+                        padding: '2px',
+                        fontWeight: 'bold',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        fontSize: '8px',
+                        borderRight: '1px solid rgba(255, 255, 255, 0.2)'
+                      }}>
+                        {segmentUpper}
+                      </td>
+                      {fingers.map(finger => {
+                        const jointName = `${finger}_${segment}`
+                        const jointData = lastValidRotations?.[jointName] || { pitch: 0, yaw: 0, roll: 0 }
 
-      {/* Wrist Orientation */}
-      <div style={{
-        marginTop: '6px',
-        paddingTop: '4px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.2)'
-      }}>
-        <div style={{
-          fontWeight: 'bold',
-          marginBottom: '2px',
-          fontSize: '9px',
-          color: 'rgba(255, 255, 255, 0.9)'
-        }}>
-          WRIST ORIENTATION
-        </div>
-        <div style={{ paddingLeft: '4px', lineHeight: '1.3', fontSize: '9px' }}>
-          {(() => {
-            // Wrist orientation is stored separately in camera mode (as Euler angles)
-            const wristOrientation = currentHandRotation || { x: 0, y: 0, z: 0 }
+                        return (
+                          <td key={jointName} style={{
+                            padding: '2px',
+                            textAlign: 'center',
+                            borderLeft: finger !== 'thumb' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                            lineHeight: '1.3'
+                          }}>
+                            <div style={{ color: '#ff6b6b' }}>P:{formatDeg(jointData.pitch)}</div>
+                            <div style={{ color: '#4ecdc4' }}>Y:{formatDeg(jointData.yaw)}</div>
+                            <div style={{ color: '#ffe66d' }}>R:{formatDeg(jointData.roll)}</div>
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
-            // Show wrist orientation (Euler angles) - this is what actually updates in camera mode
-            return (
-              <>
-                <span style={{ color: '#ff6b6b' }}>X:{formatRad(wristOrientation.x)}</span>
-                {' '}
-                <span style={{ color: '#4ecdc4' }}>Y:{formatRad(wristOrientation.y)}</span>
-                {' '}
-                <span style={{ color: '#ffe66d' }}>Z:{formatRad(wristOrientation.z)}</span>
-              </>
-            )
-          })()}
-        </div>
-      </div>
+          {/* Wrist Data */}
+          <div style={{
+            marginTop: '6px',
+            paddingTop: '4px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.2)'
+          }}>
+            <div style={{
+              fontWeight: 'bold',
+              marginBottom: '2px',
+              fontSize: '9px',
+              color: 'rgba(255, 255, 255, 0.9)'
+            }}>
+              WRIST
+            </div>
+            <div style={{ paddingLeft: '4px', lineHeight: '1.3', fontSize: '9px' }}>
+              {(() => {
+                const wristData = lastValidRotations?.wrist || { pitch: 0, yaw: 0, roll: 0 }
+                return (
+                  <>
+                    <span style={{ color: '#ff6b6b' }}>P:{formatDeg(wristData.pitch)}</span>
+                    {' '}
+                    <span style={{ color: '#4ecdc4' }}>Y:{formatDeg(wristData.yaw)}</span>
+                    {' '}
+                    <span style={{ color: '#ffe66d' }}>R:{formatDeg(wristData.roll)}</span>
+                  </>
+                )
+              })()}
+            </div>
+          </div>
 
       {/* Reset Button */}
       <button

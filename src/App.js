@@ -439,12 +439,10 @@ export default function App() {
         </div>
       )}
 
-      {/* Debug Panel - shows joint rotations and reset button */}
+      {/* Debug Panel - shows 3-axis rotation data from position conversion */}
       {showDebugPanel && (
         <DebugPanel
-          leftHandRotation={finalJointRotations.left.wristOrientation || { x: 0, y: 0, z: 0 }}
-          rightHandRotation={finalJointRotations.right.wristOrientation || { x: 0, y: 0, z: 0 }}
-          jointRotations={finalJointRotations}
+          handTrackingData={handTrackingData}
           onReset={handleResetGimbals}
           onClose={() => setShowDebugPanel(false)}
         />
