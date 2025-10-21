@@ -188,6 +188,9 @@ export default function App() {
   // Quaternion tracking system toggle (default: disabled)
   const [useQuaternionTracking, setUseQuaternionTracking] = useState(false)
 
+  // Thumb 3DOF addon toggle (default: disabled, only works with quaternion tracking)
+  const [useThumb3DoF, setUseThumb3DoF] = useState(false)
+
   // Hierarchy panel state - for editor tools
   const [sceneGraph, setSceneGraph] = useState([])
   const [selectedObject, setSelectedObject] = useState(null)
@@ -435,6 +438,8 @@ export default function App() {
         calibrationManager={calibrationManagerRef.current}
         showPreview={showCameraPreview}
         useQuaternionTracking={useQuaternionTracking}
+        useThumb3DoF={useThumb3DoF}
+        robotRefs={{ left: leftRobotRef, right: rightRobotRef }}
       />
 
       {/* IK Controller - processes camera data through IK solver when in IK mode */}
@@ -492,6 +497,8 @@ export default function App() {
           onMultiDoFChange={handleMultiDoFChange}
           useQuaternionTracking={useQuaternionTracking}
           onUseQuaternionTrackingChange={setUseQuaternionTracking}
+          useThumb3DoF={useThumb3DoF}
+          onUseThumb3DoFChange={setUseThumb3DoF}
           sceneGraph={sceneGraph}
           selectedObject={selectedObject}
           onSelectObject={handleSelectObject}

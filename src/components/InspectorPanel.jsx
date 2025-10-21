@@ -119,6 +119,8 @@ const InspectorPanel = ({
   onMultiDoFChange,
   useQuaternionTracking,
   onUseQuaternionTrackingChange,
+  useThumb3DoF,
+  onUseThumb3DoFChange,
   sceneGraph,
   selectedObject,
   onSelectObject
@@ -713,6 +715,26 @@ const InspectorPanel = ({
                 )}
               >
                 Quaternion
+              </button>
+            )}
+
+            {/* Thumb 3DOF Addon (only when quaternion tracking is enabled) */}
+            {isCameraMode && useQuaternionTracking && (
+              <button
+                onClick={() => {
+                  const newValue = !useThumb3DoF
+                  onUseThumb3DoFChange(newValue)
+                  console.log('🔧 [InspectorPanel] Thumb 3DOF addon toggled:', newValue)
+                }}
+                className={cn(
+                  "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                  useThumb3DoF
+                    ? "bg-green-600 text-white"
+                    : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+                )}
+                title="Enable full 3-axis thumb rotation (accounts for non-orthogonal URDF axes)"
+              >
+                3DOF Thumb
               </button>
             )}
 

@@ -3,12 +3,12 @@ import { Hands } from '@mediapipe/hands'
 import { drawConnectors } from '@mediapipe/drawing_utils'
 import { landmarksToJointRotations } from '../utils/handKinematics'
 import { MotionFilter } from '../utils/motionFilter'
-import { CalibrationManager } from '../utils/coordinateMapping'
 import { landmarksToQuaternions } from '../utils/handKinematicsQuaternion'
 import { quaternionsToURDFJoints } from '../utils/quaternionToAxisAngles'
 import { createQuaternionFilter } from '../utils/quaternionMotionFilter'
+import { applyThumb3DoFAddon, shouldApplyThumb3DoF, mergeThumbOverrides } from '../utils/thumbAddon3DoF'
 
-export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true, useQuaternionTracking = false }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true, useQuaternionTracking = false, useThumb3DoF = false, robotRefs = { left: null, right: null } }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
@@ -215,6 +215,16 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
 
             // Decompose quaternions to URDF joint angles
             rotations = quaternionsToURDFJoints(filteredQuaternions)
+
+            // 🔥 THUMB 3DOF ADDON: Override thumb joints with full 3-axis decomposition
+            const handSide = handedness === 'Left' ? 'left' : 'right'
+            const robot = robotRefs[handSide]?.current
+
+            if (shouldApplyThumb3DoF(useThumb3DoF, useQuaternionTracking, robot)) {
+              const thumbOverrides = applyThumb3DoFAddon(filteredQuaternions, robot, handedness)
+              rotations = mergeThumbOverrides(rotations, thumbOverrides)
+              console.log('🔧 [Thumb3DoF] Applied thumb overrides for', handedness, 'hand')
+            }
 
             console.log('🔄 Quaternion tracking:', handedness, rotations)
           } else {
