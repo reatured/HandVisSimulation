@@ -268,7 +268,7 @@ export default function DebugPanel({
           </div>
 
       {/* Reset Button */}
-      <button
+      {/* <button
         onClick={onReset}
         style={{
           width: '100%',
@@ -287,7 +287,7 @@ export default function DebugPanel({
         onMouseOut={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.9)'}
       >
         Reset Rotation
-      </button>
+      </button> */}
     </div>
   )
 }

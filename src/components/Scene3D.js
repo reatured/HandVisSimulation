@@ -1,10 +1,11 @@
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, Grid, Environment } from '@react-three/drei'
+import { OrbitControls, Grid, Environment, Select } from '@react-three/drei'
 import { useRef, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import HandModel from './HandModel'
 import GimbalControl from './GimbalControl'
 import DebugLabels from './DebugLabels'
+import { useSceneGraph } from '../editor/useSceneGraph'
 
 // Custom gradient ground plane
 function GradientGround() {
@@ -81,6 +82,19 @@ function CameraController({ position }) {
   return null
 }
 
+// Scene graph reporter - collects scene hierarchy and sends to parent
+function SceneGraphReporter({ onSceneGraphUpdate }) {
+  const sceneGraph = useSceneGraph()
+
+  useEffect(() => {
+    if (onSceneGraphUpdate) {
+      onSceneGraphUpdate(sceneGraph)
+    }
+  }, [sceneGraph, onSceneGraphUpdate])
+
+  return null
+}
+
 export default function Scene3D({
   leftModel,
   rightModel,
@@ -102,7 +116,11 @@ export default function Scene3D({
   disableWristRotation = false,
   onLeftRobotLoaded = null,
   onRightRobotLoaded = null,
-  useMultiDoF = false
+  useMultiDoF = false,
+  showJointGimbals = false,
+  onSceneGraphUpdate = null,
+  selectedObject = null,
+  onSelectObject = null
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -145,6 +163,9 @@ export default function Scene3D({
     >
       {/* Camera position controller - updates when mirror mode changes */}
       <CameraController position={cameraPosition} />
+
+      {/* Scene graph reporter - sends hierarchy to parent */}
+      <SceneGraphReporter onSceneGraphUpdate={onSceneGraphUpdate} />
 
       {/* Enhanced lighting setup */}
       <ambientLight intensity={2} />
@@ -200,6 +221,7 @@ export default function Scene3D({
               zRotationOffset={leftHandZRotation}
               onRobotLoaded={onLeftRobotLoaded}
               useMultiDoF={useMultiDoF}
+              showJointGimbals={showJointGimbals}
             />
           </GimbalControl>
         </group>
@@ -229,6 +251,7 @@ export default function Scene3D({
               zRotationOffset={rightHandZRotation}
               onRobotLoaded={onRightRobotLoaded}
               useMultiDoF={useMultiDoF}
+              showJointGimbals={showJointGimbals}
             />
           </GimbalControl>
         </group>

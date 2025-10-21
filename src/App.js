@@ -144,6 +144,9 @@ export default function App() {
   // Gimbal visibility toggle
   const [showGimbals, setShowGimbals] = useState(false)
 
+  // Joint gimbals visibility toggle (default: disabled)
+  const [showJointGimbals, setShowJointGimbals] = useState(false)
+
   // Coordinate axes visibility toggle (default: enabled for debugging)
   const [showAxes, setShowAxes] = useState(true)
 
@@ -177,6 +180,10 @@ export default function App() {
 
   // Quaternion tracking system toggle (default: disabled)
   const [useQuaternionTracking, setUseQuaternionTracking] = useState(false)
+
+  // Hierarchy panel state - for editor tools
+  const [sceneGraph, setSceneGraph] = useState([])
+  const [selectedObject, setSelectedObject] = useState(null)
 
   // Initialize calibration manager (persistent across renders)
   // Use lazy initialization to avoid creating new instance on every render
@@ -363,6 +370,16 @@ export default function App() {
     }))
   }, [])
 
+  // Handler for scene graph updates from Scene3D
+  const handleSceneGraphUpdate = useCallback((graph) => {
+    setSceneGraph(graph)
+  }, [])
+
+  // Handler for object selection from hierarchy panel
+  const handleSelectObject = useCallback((object) => {
+    setSelectedObject(object)
+  }, [])
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Scene3D
@@ -378,6 +395,7 @@ export default function App() {
         onLeftGimbalChange={setLeftHandGimbal}
         onRightGimbalChange={setRightHandGimbal}
         showGimbals={showGimbals}
+        showJointGimbals={showJointGimbals}
         showAxes={showAxes}
         showDebugLabels={showDebugLabels}
         enableCameraPosition={enableCameraPosition}
@@ -387,6 +405,9 @@ export default function App() {
         onLeftRobotLoaded={handleLeftRobotLoaded}
         onRightRobotLoaded={handleRightRobotLoaded}
         useMultiDoF={useMultiDoF}
+        onSceneGraphUpdate={handleSceneGraphUpdate}
+        selectedObject={selectedObject}
+        onSelectObject={handleSelectObject}
       />
 
       <HandTrackingCamera
@@ -401,6 +422,7 @@ export default function App() {
       {showControlPanel && (
         <InspectorPanel
           jointRotations={finalJointRotations}
+          cameraJointRotations={cameraJointRotations}
           selectedJoint={selectedJoint}
           onSelectedJointChange={setSelectedJoint}
           onJointRotationChange={handleJointRotationChange}
@@ -417,6 +439,8 @@ export default function App() {
           calibrationStatus={calibrationStatus}
           showGimbals={showGimbals}
           onShowGimbalsChange={setShowGimbals}
+          showJointGimbals={showJointGimbals}
+          onShowJointGimbalsChange={setShowJointGimbals}
           showAxes={showAxes}
           onShowAxesChange={setShowAxes}
           showDebugLabels={showDebugLabels}
@@ -437,6 +461,9 @@ export default function App() {
           onMultiDoFChange={handleMultiDoFChange}
           useQuaternionTracking={useQuaternionTracking}
           onUseQuaternionTrackingChange={setUseQuaternionTracking}
+          sceneGraph={sceneGraph}
+          selectedObject={selectedObject}
+          onSelectObject={handleSelectObject}
         />
       )}
 

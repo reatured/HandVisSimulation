@@ -7,6 +7,7 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { getURDFPath } from '../utils/urdfConfig'
 import { mapUIJointToURDF, clampJointValue } from '../utils/urdfJointMapping'
 import { parseJointConfig, createSemanticMapping } from '../utils/urdfParser'
+import JointGimbalVisualizer from './JointGimbalVisualizer'
 
 /**
  * URDFHandModel Component
@@ -19,7 +20,8 @@ export default function URDFHandModel({
   position = [0, 0, 0],
   cameraPosition = null,
   onRobotLoaded = null,
-  useMultiDoF = false
+  useMultiDoF = false,
+  showJointGimbals = false
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -272,6 +274,7 @@ export default function URDFHandModel({
     return (
       <group ref={groupRef} position={position}>
         <primitive object={robot} />
+        <JointGimbalVisualizer robot={robot} visible={showJointGimbals} scale={0.05} />
       </group>
     )
   }

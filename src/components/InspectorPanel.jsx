@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react'
-import { RotateCw, Move, Box, Focus, ChevronDown, Eye, EyeOff } from 'lucide-react'
+import { RotateCw, Move, Box, Focus, ChevronDown, Eye, EyeOff, List } from 'lucide-react'
 import { Card } from './ui/card'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible'
 import { ScrollArea } from './ui/scroll-area'
@@ -8,6 +8,7 @@ import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
 import ModelSelectorModal from './ModelSelectorModal'
+import HierarchyPanel from '../editor/HierarchyPanel'
 
 // Joint Button Component
 const JointButton = memo(({ jointName, label, isAvailable, selectedJoint, onSelectedJointChange }) => {
@@ -79,6 +80,7 @@ const MODEL_JOINT_AVAILABILITY = {
 
 const InspectorPanel = ({
   jointRotations,
+  cameraJointRotations,
   selectedJoint,
   onSelectedJointChange,
   onJointRotationChange,
@@ -95,6 +97,8 @@ const InspectorPanel = ({
   calibrationStatus,
   showGimbals,
   onShowGimbalsChange,
+  showJointGimbals,
+  onShowJointGimbalsChange,
   enableCameraPosition,
   onEnableCameraPositionChange,
   showAxes,
@@ -114,12 +118,16 @@ const InspectorPanel = ({
   rightHandJointConfig,
   onMultiDoFChange,
   useQuaternionTracking,
-  onUseQuaternionTrackingChange
+  onUseQuaternionTrackingChange,
+  sceneGraph,
+  selectedObject,
+  onSelectObject
 }) => {
   // Collapsible section states (all open by default)
   const [controlsOpen, setControlsOpen] = useState(true)
   const [jointsOpen, setJointsOpen] = useState(true)
   const [displayOpen, setDisplayOpen] = useState(true)
+  const [hierarchyOpen, setHierarchyOpen] = useState(false)
 
   // State for modal visibility
   const [isLeftModalOpen, setIsLeftModalOpen] = useState(false)
@@ -482,6 +490,36 @@ const InspectorPanel = ({
                               const [lower, upper] = mapping.limits[axis] || [-1.5, 1.5]
                               const currentValue = currentHandRotations[jointName]?.[axis] || 0
 
+                              // Get camera angle for comparison
+                              // Note: Camera data is swapped in App.js for back view, so we need to access the opposite hand
+                              const cameraHand = selectedHand === 'left' ? 'right' : 'left'
+                              const cameraData = cameraJointRotations?.[cameraHand]
+                              let cameraAngle = null
+
+                              // Camera data comes as flat URDF joint names (e.g., "thumb_cmc_roll")
+                              // We need to construct the full URDF joint name from semantic key + axis
+                              const urdfJointName = `${jointName}_${axis}`
+
+                              // Also check for typo version "thunb" instead of "thumb" (L6 URDF has this typo)
+                              const urdfJointNameTypo = urdfJointName.replace('thumb', 'thunb')
+
+                              // Debug logging (only for thumb_cmc to avoid spam)
+                              if (jointName === 'thumb_cmc' && cameraData) {
+                                console.log('🔍 [InspectorPanel] Camera angle lookup:')
+                                console.log('  Joint:', jointName, 'Axis:', axis)
+                                console.log('  Looking for:', urdfJointName)
+                                console.log('  Camera data keys:', Object.keys(cameraData))
+                                console.log('  Found value:', cameraData[urdfJointName])
+                              }
+
+                              if (cameraData) {
+                                if (cameraData[urdfJointName] !== undefined) {
+                                  cameraAngle = cameraData[urdfJointName]
+                                } else if (cameraData[urdfJointNameTypo] !== undefined) {
+                                  cameraAngle = cameraData[urdfJointNameTypo]
+                                }
+                              }
+
                               return (
                                 <div key={axis} className="mb-2 last:mb-0">
                                   <div className="flex items-center justify-between mb-1">
@@ -492,6 +530,16 @@ const InspectorPanel = ({
                                       {(currentValue * 180 / Math.PI).toFixed(0)}°
                                     </span>
                                   </div>
+                                  {/* Camera angle display */}
+                                  {cameraAngle !== null && cameraAngle !== undefined ? (
+                                    <div className="text-[9px] text-primary/70 mb-0.5 font-medium">
+                                      Camera: {(cameraAngle * 180 / Math.PI).toFixed(1)}°
+                                    </div>
+                                  ) : (
+                                    <div className="text-[9px] text-panel-muted-foreground/40 mb-0.5">
+                                      Camera: ---
+                                    </div>
+                                  )}
                                   <Slider
                                     value={[currentValue]}
                                     onValueChange={(values) => {
@@ -518,6 +566,35 @@ const InspectorPanel = ({
               </Card>
             </Collapsible>
           )}
+
+          {/* Hierarchy Section */}
+          <Collapsible open={hierarchyOpen} onOpenChange={setHierarchyOpen}>
+            <Card className="bg-panel-muted/50 border-panel-border hover:border-panel-border/60 transition-colors">
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-2 cursor-pointer">
+                  <div className="flex items-center gap-1.5">
+                    <List className="w-4 h-4 text-panel-muted-foreground" />
+                    <span className="text-sm font-medium text-panel-foreground">Hierarchy</span>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      "w-4 h-4 text-panel-muted-foreground transition-transform",
+                      hierarchyOpen && "transform rotate-180"
+                    )}
+                  />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="h-64">
+                  <HierarchyPanel
+                    sceneGraph={sceneGraph}
+                    selectedObject={selectedObject}
+                    onSelectObject={onSelectObject}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
           {/* Info */}
           {isCameraMode && (
@@ -566,6 +643,19 @@ const InspectorPanel = ({
               )}
             >
               Axes
+            </button>
+
+            {/* Joint Gimbals */}
+            <button
+              onClick={() => onShowJointGimbalsChange(!showJointGimbals)}
+              className={cn(
+                "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                showJointGimbals
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+              )}
+            >
+              Joints
             </button>
 
             {/* Labels */}
