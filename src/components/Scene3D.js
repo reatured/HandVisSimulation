@@ -100,7 +100,6 @@ export default function Scene3D({
   rightHandZRotation = 0,
   showDebugLabels = false,
   disableWristRotation = false,
-  mirrorMode = true,
   onLeftRobotLoaded = null,
   onRightRobotLoaded = null,
   useMultiDoF = false
@@ -108,10 +107,8 @@ export default function Scene3D({
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
 
-  // Calculate camera position based on mirror mode
-  // Mirror ON: Front view (positive Z) - like looking in a mirror
-  // Mirror OFF: Back view (negative Z) - looking from behind
-  const cameraPosition = mirrorMode ? [0, 0.5, 1] : [0, 0.5, -1]
+  // Camera position - back view (looking from behind, natural perspective)
+  const cameraPosition = [0, 0.5, -1]
 
   // Ensure we always have valid objects for joint rotations
   const safeLeftRotations = leftJointRotations || {}

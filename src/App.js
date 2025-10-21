@@ -153,12 +153,6 @@ export default function App() {
   // Camera position tracking toggle (default: disabled)
   const [enableCameraPosition, setEnableCameraPosition] = useState(false)
 
-  // Mirror mode toggle (default: OFF = back view perspective)
-  const [mirrorMode, setMirrorMode] = useState(false)
-
-  // Hand control swap toggle (swap which hand controls which model)
-  const [swapHandControls, setSwapHandControls] = useState(false)
-
   // Wrist rotation toggle (disable wrist rotation to keep hand orientation fixed)
   const [disableWristRotation, setDisableWristRotation] = useState(false)
 
@@ -219,36 +213,23 @@ export default function App() {
   }, [])
 
   // Determine which joint rotations to use based on control mode
-  const activeJointRotations = useMemo(() => {
+  const finalJointRotations = useMemo(() => {
     if (controlMode === 'camera') {
+      // Camera mode: Swap hands for back view (camera looking from behind)
+      // This makes the virtual hands mirror your real hands naturally
       return {
-        left: cameraJointRotations.left || {},
-        right: cameraJointRotations.right || {}
+        left: cameraJointRotations.right || {},
+        right: cameraJointRotations.left || {}
       }
     } else {
+      // Manual mode: No swapping - direct control
+      // Left controls left hand, right controls right hand
       return {
         left: manualJointRotations.left || {},
         right: manualJointRotations.right || {}
       }
     }
   }, [controlMode, cameraJointRotations, manualJointRotations])
-
-  // Apply hand control swap based on mirror mode and manual swap toggle
-  // Mirror mode OFF automatically swaps hands (back view perspective)
-  const finalJointRotations = useMemo(() => {
-    const shouldSwap = !mirrorMode || swapHandControls
-    const result = shouldSwap ? {
-      left: activeJointRotations.right,
-      right: activeJointRotations.left
-    } : activeJointRotations
-
-    // Debug logging
-    // console.log('App.js - finalJointRotations:', result)
-    // console.log('App.js - controlMode:', controlMode)
-    // console.log('App.js - activeJointRotations:', activeJointRotations)
-
-    return result
-  }, [mirrorMode, swapHandControls, activeJointRotations, controlMode])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
@@ -400,7 +381,6 @@ export default function App() {
         leftHandZRotation={leftHandZRotation}
         rightHandZRotation={rightHandZRotation}
         disableWristRotation={disableWristRotation}
-        mirrorMode={mirrorMode}
         onLeftRobotLoaded={handleLeftRobotLoaded}
         onRightRobotLoaded={handleRightRobotLoaded}
         useMultiDoF={useMultiDoF}
@@ -416,7 +396,7 @@ export default function App() {
 
       {showControlPanel && (
         <InspectorPanel
-          jointRotations={activeJointRotations}
+          jointRotations={finalJointRotations}
           selectedJoint={selectedJoint}
           onSelectedJointChange={setSelectedJoint}
           onJointRotationChange={handleJointRotationChange}
@@ -439,16 +419,12 @@ export default function App() {
           onShowDebugLabelsChange={setShowDebugLabels}
           enableCameraPosition={enableCameraPosition}
           onEnableCameraPositionChange={setEnableCameraPosition}
-          swapHandControls={swapHandControls}
-          onSwapHandControlsChange={setSwapHandControls}
           leftHandZRotation={leftHandZRotation}
           rightHandZRotation={rightHandZRotation}
           onLeftHandRotateZ={handleLeftHandRotateZ}
           onRightHandRotateZ={handleRightHandRotateZ}
           disableWristRotation={disableWristRotation}
           onDisableWristRotationChange={setDisableWristRotation}
-          mirrorMode={mirrorMode}
-          onMirrorModeChange={setMirrorMode}
           onApplyMetalMaterial={handleApplyMetalMaterial}
           useMultiDoF={useMultiDoF}
           onUseMultiDoFChange={setUseMultiDoF}
