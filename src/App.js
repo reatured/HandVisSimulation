@@ -176,6 +176,11 @@ export default function App() {
   const leftRobotRef = useRef(null)
   const rightRobotRef = useRef(null)
 
+  // Multi-DoF system state
+  const [leftHandJointConfig, setLeftHandJointConfig] = useState(null)
+  const [rightHandJointConfig, setRightHandJointConfig] = useState(null)
+  const [useMultiDoF, setUseMultiDoF] = useState(false)
+
   // Initialize calibration manager (persistent across renders)
   const calibrationManagerRef = useRef(new CalibrationManager())
 
@@ -294,12 +299,20 @@ export default function App() {
   }, [])
 
   // Handlers for robot loaded callbacks
-  const handleLeftRobotLoaded = useCallback((robot) => {
+  const handleLeftRobotLoaded = useCallback((robot, config, side) => {
     leftRobotRef.current = robot
+    if (config) {
+      setLeftHandJointConfig(config)
+      console.log('[App.js] Left hand joint config loaded:', config)
+    }
   }, [])
 
-  const handleRightRobotLoaded = useCallback((robot) => {
+  const handleRightRobotLoaded = useCallback((robot, config, side) => {
     rightRobotRef.current = robot
+    if (config) {
+      setRightHandJointConfig(config)
+      console.log('[App.js] Right hand joint config loaded:', config)
+    }
   }, [])
 
   // Handler for applying metal material to both hand models
@@ -363,6 +376,9 @@ export default function App() {
         mirrorMode={mirrorMode}
         onLeftRobotLoaded={handleLeftRobotLoaded}
         onRightRobotLoaded={handleRightRobotLoaded}
+        useMultiDoF={useMultiDoF}
+        leftHandJointConfig={leftHandJointConfig}
+        rightHandJointConfig={rightHandJointConfig}
       />
 
       <HandTrackingCamera
@@ -409,6 +425,10 @@ export default function App() {
           mirrorMode={mirrorMode}
           onMirrorModeChange={setMirrorMode}
           onApplyMetalMaterial={handleApplyMetalMaterial}
+          useMultiDoF={useMultiDoF}
+          onUseMultiDoFChange={setUseMultiDoF}
+          leftHandJointConfig={leftHandJointConfig}
+          rightHandJointConfig={rightHandJointConfig}
         />
       )}
 

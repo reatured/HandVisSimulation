@@ -95,7 +95,11 @@ const InspectorPanel = ({
   onDisableWristRotationChange,
   mirrorMode,
   onMirrorModeChange,
-  onApplyMetalMaterial
+  onApplyMetalMaterial,
+  useMultiDoF = false,
+  onUseMultiDoFChange,
+  leftHandJointConfig = null,
+  rightHandJointConfig = null
 }) => {
   // Collapsible section states (all open by default)
   const [controlsOpen, setControlsOpen] = useState(true)
@@ -180,6 +184,49 @@ const InspectorPanel = ({
                         Camera
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Multi-DoF System Toggle */}
+                  <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-medium text-panel-foreground">
+                        Multi-DoF System
+                      </label>
+                      <Badge variant={useMultiDoF ? "default" : "secondary"} className="text-[9px] px-1.5 py-0">
+                        {useMultiDoF ? "ON" : "OFF"}
+                      </Badge>
+                    </div>
+                    <div className="text-[10px] text-panel-muted-foreground mb-1.5 leading-tight">
+                      Dynamic URDF-based joint control. Auto-detects DoF from model.
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <Button
+                        variant={!useMultiDoF ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onUseMultiDoFChange && onUseMultiDoFChange(false)}
+                        className="text-[10px] h-7"
+                      >
+                        Single-Axis
+                      </Button>
+                      <Button
+                        variant={useMultiDoF ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onUseMultiDoFChange && onUseMultiDoFChange(true)}
+                        className="text-[10px] h-7"
+                      >
+                        Multi-DoF
+                      </Button>
+                    </div>
+                    {useMultiDoF && leftHandJointConfig && (
+                      <div className="mt-1.5 text-[9px] text-panel-muted-foreground">
+                        ✓ Left: {leftHandJointConfig.debugInfo?.multiDoFGroups || 0} multi-DoF joints
+                      </div>
+                    )}
+                    {useMultiDoF && rightHandJointConfig && (
+                      <div className="text-[9px] text-panel-muted-foreground">
+                        ✓ Right: {rightHandJointConfig.debugInfo?.multiDoFGroups || 0} multi-DoF joints
+                      </div>
+                    )}
                   </div>
 
                   {/* Calibration - Camera mode only */}

@@ -12,7 +12,10 @@ function HandModelInner({
   jointRotations = {},
   cameraPosition = null,
   zRotationOffset = 0,
-  onRobotLoaded = null
+  onRobotLoaded = null,
+  useMultiDoF = false,
+  semanticMapping = null,
+  mediaPipeMap = null
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -28,6 +31,9 @@ function HandModelInner({
               position={[0, 0, 0]}
               cameraPosition={cameraPosition}
               onRobotLoaded={onRobotLoaded}
+              useMultiDoF={useMultiDoF}
+              semanticMapping={semanticMapping}
+              mediaPipeMap={mediaPipeMap}
             />
           )
         }
@@ -64,6 +70,9 @@ function HandModelInner({
               position={[0, 0, 0]}
               cameraPosition={cameraPosition}
               onRobotLoaded={onRobotLoaded}
+              useMultiDoF={useMultiDoF}
+              semanticMapping={semanticMapping}
+              mediaPipeMap={mediaPipeMap}
             />
           )
         }

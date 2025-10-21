@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { Hands } from '@mediapipe/hands'
 import { drawConnectors } from '@mediapipe/drawing_utils'
 import { landmarksToJointRotations } from '../utils/handKinematics'
+import { landmarksToRotations3D } from '../utils/positionToRotation'
 import { MotionFilter } from '../utils/motionFilter'
 import { CalibrationManager } from '../utils/coordinateMapping'
 
@@ -197,8 +198,11 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
 
           console.log(`Processing hand ${index}: ${handedness}`)
 
-          // Convert landmarks to joint rotations
+          // Convert landmarks to joint rotations (single-axis)
           let rotations = landmarksToJointRotations(landmarks, handedness)
+
+          // Convert landmarks to 3D rotations (multi-DoF: pitch, yaw, roll)
+          const rotations3D = landmarksToRotations3D(landmarks, handedness)
 
           // Extract wrist position (landmark 0 is always the wrist)
           const wristLandmark = landmarks[0]
@@ -233,12 +237,19 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
             }
           }
 
+          // Combine both rotation formats into a single structure
+          // This allows URDFHandModel to choose based on useMultiDoF flag
+          const combinedRotations = {
+            ...rotations,           // Spread single-axis rotations (for backward compatibility)
+            joints3D: rotations3D  // Add 3D rotations for multi-DoF mode
+          }
+
           // Store rotations and positions by hand side
           if (handedness === 'Left') {
-            handRotations.left = rotations
+            handRotations.left = combinedRotations
             handPositions.left = position
           } else {
-            handRotations.right = rotations
+            handRotations.right = combinedRotations
             handPositions.right = position
           }
         })

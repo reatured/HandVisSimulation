@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader'
 import { getURDFPath } from '../utils/urdfConfig'
 import { mapUIJointToURDF, clampJointValue } from '../utils/urdfJointMapping'
+import { parseJointConfig, createSemanticMapping, createMediaPipeToSemanticMap, getURDFDebugInfo } from '../utils/urdfParser'
 
 /**
  * URDFHandModel Component
@@ -17,7 +18,10 @@ export default function URDFHandModel({
   jointRotations = {},
   position = [0, 0, 0],
   cameraPosition = null,
-  onRobotLoaded = null
+  onRobotLoaded = null,
+  useMultiDoF = false,
+  semanticMapping = null,
+  mediaPipeMap = null
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -114,9 +118,24 @@ export default function URDFHandModel({
         setRobot(loadedRobot)
         setLoading(false)
 
-        // Notify parent component that robot is loaded
+        // Parse URDF to extract joint configuration
+        const jointConfig = parseJointConfig(loadedRobot)
+        const parsedSemanticMapping = createSemanticMapping(jointConfig)
+        const parsedMediaPipeMap = createMediaPipeToSemanticMap(parsedSemanticMapping)
+        const debugInfo = getURDFDebugInfo(loadedRobot)
+
+        console.log(`[${side.toUpperCase()}] URDF Debug Info:`, debugInfo)
+        console.log(`[${side.toUpperCase()}] Semantic Mapping:`, parsedSemanticMapping)
+        console.log(`[${side.toUpperCase()}] MediaPipe Map:`, parsedMediaPipeMap)
+
+        // Notify parent component that robot is loaded with parsed config
         if (onRobotLoaded) {
-          onRobotLoaded(loadedRobot)
+          onRobotLoaded(loadedRobot, {
+            jointConfig,
+            semanticMapping: parsedSemanticMapping,
+            mediaPipeMap: parsedMediaPipeMap,
+            debugInfo
+          }, side)
         }
       },
       (progress) => {
@@ -158,6 +177,27 @@ export default function URDFHandModel({
     // Handle both old format (flat object) and new format (with joints property)
     const joints = jointRotations.joints || jointRotations
 
+    // Check if we have 3D rotation data for multi-DoF mode
+    const joints3D = jointRotations.joints3D
+    const hasMultiDoFData = joints3D && useMultiDoF && semanticMapping
+
+    // Use 3D rotations if available and multi-DoF is enabled, otherwise use single-axis
+    const activeJoints = hasMultiDoFData ? joints3D : joints
+
+    // DEBUG: Log multi-DoF state
+    if (useMultiDoF) {
+      console.log('[URDFHandModel] Multi-DoF Debug:', {
+        useMultiDoF,
+        hasSemanticMapping: !!semanticMapping,
+        hasJoints3D: !!joints3D,
+        hasMultiDoFData,
+        activeJointsKeys: activeJoints ? Object.keys(activeJoints) : [],
+        semanticMappingKeys: semanticMapping ? Object.keys(semanticMapping) : [],
+        modelPath,
+        side
+      })
+    }
+
     // Wrist orientation is now handled by GimbalControl in Scene3D
     // Do not apply wrist rotation here to avoid double rotation
     robot.rotation.set(0, 0, 0)
@@ -175,35 +215,90 @@ export default function URDFHandModel({
     }
 
     // Apply each joint rotation
-    if (Object.keys(joints).length > 0) {
-      Object.entries(joints).forEach(([uiJointName, angle]) => {
-        // Map UI joint name to URDF joint name
-        const urdfJointName = mapUIJointToURDF(uiJointName, modelPath)
+    if (Object.keys(activeJoints).length > 0) {
+      Object.entries(activeJoints).forEach(([uiJointName, angleData]) => {
+        // Check if this is multi-DoF data (object with pitch/yaw/roll)
+        const isMultiDoF = typeof angleData === 'object' &&
+                           (angleData.pitch !== undefined ||
+                            angleData.yaw !== undefined ||
+                            angleData.roll !== undefined)
 
-        if (!urdfJointName) {
-          // Skip if no mapping exists
-          return
-        }
+        if (isMultiDoF && useMultiDoF && semanticMapping) {
+          // NEW: Use dynamic semantic mapping for multi-DoF joints
+          const jointMapping = semanticMapping[uiJointName]
 
-        // Check if the joint exists in the robot
-        const joint = robot.joints[urdfJointName]
-        if (!joint) {
-          // Only warn once per joint
-          return
-        }
+          // DEBUG: Log mapping lookup
+          if (jointMapping) {
+            console.log(`[URDFHandModel] ✓ Found mapping for "${uiJointName}":`, {
+              axes: jointMapping.axes,
+              urdfJoints: jointMapping.urdfJoints,
+              angleData
+            })
 
-        // Clamp the angle to joint limits
-        const clampedAngle = clampJointValue(angle, urdfJointName, modelPath)
+            jointMapping.axes.forEach(axis => {
+              const urdfJointName = jointMapping.urdfJoints[axis]
+              const axisValue = angleData[axis] || 0
+              const [lower, upper] = jointMapping.limits[axis]
 
-        // Apply the rotation
-        try {
-          joint.setJointValue(clampedAngle)
-        } catch (error) {
-          console.error(`Error setting joint value for ${urdfJointName}:`, error)
+              // Apply with dynamic limits
+              const joint = robot.joints[urdfJointName]
+              if (joint) {
+                const clampedValue = Math.max(lower, Math.min(upper, axisValue))
+
+                try {
+                  joint.setJointValue(clampedValue)
+
+                  // Handle mimic joints
+                  const mimicInfo = jointMapping.mimics?.[axis]
+                  if (mimicInfo) {
+                    const mimicJoint = robot.joints[mimicInfo.joint]
+                    if (mimicJoint) {
+                      const mimicValue = clampedValue * mimicInfo.multiplier + mimicInfo.offset
+                      mimicJoint.setJointValue(mimicValue)
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error setting multi-DoF joint value for ${urdfJointName}:`, error)
+                }
+              }
+            })
+          } else {
+            console.warn(`[URDFHandModel] ✗ NO MAPPING found for "${uiJointName}"`, {
+              availableMappings: semanticMapping ? Object.keys(semanticMapping) : []
+            })
+          }
+        } else {
+          // EXISTING: Single-axis fallback (unchanged)
+          const angle = isMultiDoF ? angleData.pitch || 0 : angleData
+
+          // Map UI joint name to URDF joint name
+          const urdfJointName = mapUIJointToURDF(uiJointName, modelPath)
+
+          if (!urdfJointName) {
+            // Skip if no mapping exists
+            return
+          }
+
+          // Check if the joint exists in the robot
+          const joint = robot.joints[urdfJointName]
+          if (!joint) {
+            // Only warn once per joint
+            return
+          }
+
+          // Clamp the angle to joint limits
+          const clampedAngle = clampJointValue(angle, urdfJointName, modelPath)
+
+          // Apply the rotation
+          try {
+            joint.setJointValue(clampedAngle)
+          } catch (error) {
+            console.error(`Error setting joint value for ${urdfJointName}:`, error)
+          }
         }
       })
     }
-  }, [robot, jointRotations, modelPath, cameraPosition])
+  }, [robot, jointRotations, modelPath, cameraPosition, useMultiDoF, semanticMapping])
 
   // Render loading state
   if (loading) {

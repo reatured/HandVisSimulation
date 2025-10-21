@@ -154,20 +154,21 @@ export function landmarksToRotations3D(landmarks, handedness = 'Right') {
   rotations.wrist = calculateWristRotation3D(landmarks, handedness)
 
   // THUMB joints
-  rotations.thumb_mcp = calculateJointRotation3D(
+  // Using CMC (carpometacarpal) naming to match URDF conventions
+  rotations.thumb_cmc = calculateJointRotation3D(
     landmarks[LANDMARKS.THUMB_CMC],
     landmarks[LANDMARKS.THUMB_MCP],
     landmarks[LANDMARKS.THUMB_IP],
     referenceUp
   )
-  rotations.thumb_pip = calculateJointRotation3D(
+  rotations.thumb_ip = calculateJointRotation3D(
     landmarks[LANDMARKS.THUMB_MCP],
     landmarks[LANDMARKS.THUMB_IP],
     landmarks[LANDMARKS.THUMB_TIP],
     referenceUp
   )
-  rotations.thumb_dip = { ...rotations.thumb_pip } // Thumb DIP follows IP
-  rotations.thumb_tip = { pitch: rotations.thumb_pip.pitch * 0.5, yaw: 0, roll: 0 }
+  rotations.thumb_dip = { ...rotations.thumb_ip } // Thumb DIP follows IP
+  rotations.thumb_tip = { pitch: rotations.thumb_ip.pitch * 0.5, yaw: 0, roll: 0 }
 
   // INDEX finger joints
   rotations.index_mcp = calculateJointRotation3D(
