@@ -175,6 +175,9 @@ export default function App() {
   const [rightHandJointConfig, setRightHandJointConfig] = useState(null)
   const [useMultiDoF, setUseMultiDoF] = useState(false)
 
+  // Quaternion tracking system toggle (default: disabled)
+  const [useQuaternionTracking, setUseQuaternionTracking] = useState(false)
+
   // Initialize calibration manager (persistent across renders)
   // Use lazy initialization to avoid creating new instance on every render
   const calibrationManagerRef = useRef(null)
@@ -392,6 +395,7 @@ export default function App() {
         onHandPositions={handleCameraHandPositions}
         calibrationManager={calibrationManagerRef.current}
         showPreview={showCameraPreview}
+        useQuaternionTracking={useQuaternionTracking}
       />
 
       {showControlPanel && (
@@ -431,6 +435,8 @@ export default function App() {
           leftHandJointConfig={leftHandJointConfig}
           rightHandJointConfig={rightHandJointConfig}
           onMultiDoFChange={handleMultiDoFChange}
+          useQuaternionTracking={useQuaternionTracking}
+          onUseQuaternionTrackingChange={setUseQuaternionTracking}
         />
       )}
 

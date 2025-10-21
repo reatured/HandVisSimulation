@@ -4,8 +4,11 @@ import { drawConnectors } from '@mediapipe/drawing_utils'
 import { landmarksToJointRotations } from '../utils/handKinematics'
 import { MotionFilter } from '../utils/motionFilter'
 import { CalibrationManager } from '../utils/coordinateMapping'
+import { landmarksToQuaternions } from '../utils/handKinematicsQuaternion'
+import { quaternionsToURDFJoints } from '../utils/quaternionToAxisAngles'
+import { createQuaternionFilter } from '../utils/quaternionMotionFilter'
 
-export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true, useQuaternionTracking = false }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
@@ -23,6 +26,9 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
     enableVelocityLimiting: true,
     enableConstraints: true
   }))
+
+  // Initialize quaternion filter (persistent across renders)
+  const quaternionFilterRef = useRef(createQuaternionFilter(0.3))
 
   // Keep the refs updated without triggering re-initialization
   useEffect(() => {
@@ -197,8 +203,30 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
 
           // console.log(`Processing hand ${index}: ${handedness}`)
 
-          // Convert landmarks to joint rotations
-          let rotations = landmarksToJointRotations(landmarks, handedness)
+          let rotations
+
+          // Choose processing path based on useQuaternionTracking flag
+          if (useQuaternionTracking) {
+            // QUATERNION PATH: Convert landmarks → quaternions → axis angles
+            const quaternions = landmarksToQuaternions(landmarks, handedness)
+
+            // Apply quaternion filtering (SLERP)
+            const filteredQuaternions = quaternionFilterRef.current.filter(quaternions, Date.now())
+
+            // Decompose quaternions to URDF joint angles
+            rotations = quaternionsToURDFJoints(filteredQuaternions)
+
+            console.log('🔄 Quaternion tracking:', handedness, rotations)
+          } else {
+            // ORIGINAL PATH: Convert landmarks to joint rotations (1-DOF)
+            rotations = landmarksToJointRotations(landmarks, handedness)
+
+            // Create hand prefix for filter (lowercase for consistency)
+            const handPrefix = handedness === 'Left' ? 'left' : 'right'
+
+            // Apply motion filtering with hand-specific prefix
+            rotations = motionFilterRef.current.filter(rotations, Date.now(), handPrefix)
+          }
 
           // Extract wrist position (landmark 0 is always the wrist)
           const wristLandmark = landmarks[0]
@@ -211,12 +239,6 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
             y: -(wristLandmark.y - 0.5) * 2, // Invert Y and center
             z: -wristLandmark.z * 2           // Invert Z and scale
           }
-
-          // Create hand prefix for filter (lowercase for consistency)
-          const handPrefix = handedness === 'Left' ? 'left' : 'right'
-
-          // Apply motion filtering with hand-specific prefix
-          rotations = motionFilterRef.current.filter(rotations, Date.now(), handPrefix)
 
           // Apply calibration if available
           if (calibrationManager) {

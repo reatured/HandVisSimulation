@@ -112,7 +112,9 @@ const InspectorPanel = ({
   onUseMultiDoFChange,
   leftHandJointConfig,
   rightHandJointConfig,
-  onMultiDoFChange
+  onMultiDoFChange,
+  useQuaternionTracking,
+  onUseQuaternionTrackingChange
 }) => {
   // Collapsible section states (all open by default)
   const [controlsOpen, setControlsOpen] = useState(true)
@@ -595,6 +597,25 @@ const InspectorPanel = ({
             >
               Multi-DoF
             </button>
+
+            {/* Quaternion Tracking */}
+            {isCameraMode && (
+              <button
+                onClick={() => {
+                  const newValue = !useQuaternionTracking
+                  onUseQuaternionTrackingChange(newValue)
+                  console.log('🔄 [InspectorPanel] Quaternion tracking toggled:', newValue)
+                }}
+                className={cn(
+                  "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                  useQuaternionTracking
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+                )}
+              >
+                Quaternion
+              </button>
+            )}
 
             {/* Position (camera mode only) */}
             {isCameraMode ? (
