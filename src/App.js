@@ -6,6 +6,7 @@ import DebugPanel from './components/DebugPanel'
 import { CalibrationManager } from './utils/coordinateMapping'
 import { getShortestRotation } from './utils/handKinematics'
 import { applyMetalMaterial } from './components/URDFHandModel'
+import { IKController } from './ik'
 
 // Detect if user is on mobile device
 const isMobileDevice = () => {
@@ -110,8 +111,8 @@ export default function App() {
   const isMobile = useMemo(() => isMobileDevice(), [])
 
   // Separate models for left and right hands
-  const [selectedLeftModel, setSelectedLeftModel] = useState('ability_left')
-  const [selectedRightModel, setSelectedRightModel] = useState('ability_right')
+  const [selectedLeftModel, setSelectedLeftModel] = useState('linker_l10_left')
+  const [selectedRightModel, setSelectedRightModel] = useState('linker_l10_right')
 
   const [handTrackingData, setHandTrackingData] = useState(null)
 
@@ -121,6 +122,12 @@ export default function App() {
     right: createInitialJointRotations()
   })
   const [cameraJointRotations, setCameraJointRotations] = useState({
+    left: {},
+    right: {}
+  })
+
+  // IK joint rotations (computed by IK solver from camera data)
+  const [ikJointRotations, setIkJointRotations] = useState({
     left: {},
     right: {}
   })
@@ -231,6 +238,13 @@ export default function App() {
         left: cameraJointRotations.right || {},
         right: cameraJointRotations.left || {}
       }
+    } else if (controlMode === 'ik') {
+      // IK mode: Use IK solver output, no hand swapping
+      // Camera continues running, but IK solver processes the data
+      return {
+        left: ikJointRotations.left || {},
+        right: ikJointRotations.right || {}
+      }
     } else {
       // Manual mode: No swapping - direct control
       // Left controls left hand, right controls right hand
@@ -239,7 +253,7 @@ export default function App() {
         right: manualJointRotations.right || {}
       }
     }
-  }, [controlMode, cameraJointRotations, manualJointRotations])
+  }, [controlMode, cameraJointRotations, manualJointRotations, ikJointRotations])
 
   const handleJointRotationChange = useCallback((rotation) => {
     setManualJointRotations(prev => ({
@@ -276,6 +290,10 @@ export default function App() {
 
   const handleCameraHandPositions = useCallback((positions) => {
     setCameraHandPositions(positions)
+  }, [])
+
+  const handleIKJointRotations = useCallback((rotations) => {
+    setIkJointRotations(rotations)
   }, [])
 
   const handleControlModeChange = useCallback((mode) => {
@@ -418,6 +436,19 @@ export default function App() {
         showPreview={showCameraPreview}
         useQuaternionTracking={useQuaternionTracking}
       />
+
+      {/* IK Controller - processes camera data through IK solver when in IK mode */}
+      {controlMode === 'ik' && (
+        <IKController
+          cameraLandmarks={{ left: null, right: null }} // TODO: Expose raw landmarks from HandTrackingCamera
+          onIKJointRotations={handleIKJointRotations}
+          ikOptions={{
+            maxIterations: 10,
+            convergenceThreshold: 0.001,
+            damping: 0.5
+          }}
+        />
+      )}
 
       {showControlPanel && (
         <InspectorPanel

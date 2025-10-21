@@ -145,6 +145,7 @@ const InspectorPanel = ({
   const currentRotation = joints[selectedJoint] || 0
   const isManualMode = controlMode === 'manual'
   const isCameraMode = controlMode === 'camera'
+  const isIKMode = controlMode === 'ik'
 
   const fingers = [
     { name: 'thumb', label: 'Thumb' },
@@ -189,7 +190,7 @@ const InspectorPanel = ({
                     <label className="text-xs font-medium text-panel-foreground block mb-1">
                       Control Mode
                     </label>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1.5">
                       <Button
                         variant={isManualMode ? "default" : "outline"}
                         size="sm"
@@ -205,6 +206,14 @@ const InspectorPanel = ({
                         className="text-xs uppercase"
                       >
                         Camera
+                      </Button>
+                      <Button
+                        variant={isIKMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => onControlModeChange('ik')}
+                        className="text-xs uppercase"
+                      >
+                        IK
                       </Button>
                     </div>
                   </div>
