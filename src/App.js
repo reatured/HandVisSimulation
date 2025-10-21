@@ -177,7 +177,11 @@ export default function App() {
   const rightRobotRef = useRef(null)
 
   // Initialize calibration manager (persistent across renders)
-  const calibrationManagerRef = useRef(new CalibrationManager())
+  // Use lazy initialization to avoid creating new instance on every render
+  const calibrationManagerRef = useRef(null)
+  if (calibrationManagerRef.current === null) {
+    calibrationManagerRef.current = new CalibrationManager()
+  }
 
   // Update calibration status on mount
   useEffect(() => {
@@ -234,9 +238,9 @@ export default function App() {
     } : activeJointRotations
 
     // Debug logging
-    console.log('App.js - finalJointRotations:', result)
-    console.log('App.js - controlMode:', controlMode)
-    console.log('App.js - activeJointRotations:', activeJointRotations)
+    // console.log('App.js - finalJointRotations:', result)
+    // console.log('App.js - controlMode:', controlMode)
+    // console.log('App.js - activeJointRotations:', activeJointRotations)
 
     return result
   }, [mirrorMode, swapHandControls, activeJointRotations, controlMode])
@@ -278,7 +282,7 @@ export default function App() {
     const success = calibrationManagerRef.current.calibrate(calibrationData)
     if (success) {
       setCalibrationStatus(calibrationManagerRef.current.getStatus())
-      console.log('Calibration successful!')
+      // console.log('Calibration successful!')
     }
   }, [cameraJointRotations])
 

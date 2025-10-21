@@ -197,7 +197,7 @@ export function calculateWristOrientation(landmarks, handedness = 'Right') {
   x = 0
   y = 0
 
-  console.log(`Wrist orientation (${handedness}): z=${z.toFixed(2)} [Z-axis only mode]`)
+  // console.log(`Wrist orientation (${handedness}): z=${z.toFixed(2)} [Z-axis only mode]`)
 
   return { x, y, z }
 }

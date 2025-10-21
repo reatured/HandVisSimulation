@@ -274,7 +274,7 @@ export function mapUIJointToURDF(uiJointName, modelPath) {
 
   const urdfJointName = modelMapping[uiJointName]
   if (!urdfJointName) {
-    console.warn(`No URDF joint found for UI joint: ${uiJointName} in model: ${modelPath}`)
+    // console.warn(`No URDF joint found for UI joint: ${uiJointName} in model: ${modelPath}`)
     return null
   }
 

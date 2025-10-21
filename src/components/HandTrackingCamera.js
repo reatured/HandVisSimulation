@@ -195,7 +195,7 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
         results.multiHandLandmarks.forEach((landmarks, index) => {
           const handedness = results.multiHandedness?.[index]?.label || 'Right'
 
-          console.log(`Processing hand ${index}: ${handedness}`)
+          // console.log(`Processing hand ${index}: ${handedness}`)
 
           // Convert landmarks to joint rotations
           let rotations = landmarksToJointRotations(landmarks, handedness)

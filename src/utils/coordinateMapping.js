@@ -46,7 +46,7 @@ export class CalibrationManager {
     // Save to local storage
     this.saveCalibration()
 
-    console.log('Calibration complete:', this.calibrationOffsets)
+    // console.log('Calibration complete:', this.calibrationOffsets)
     return true
   }
 
@@ -116,7 +116,7 @@ export class CalibrationManager {
     // Clear from local storage
     localStorage.removeItem(CALIBRATION_STORAGE_KEY)
 
-    console.log('Calibration reset')
+    // console.log('Calibration reset')
   }
 
   /**
@@ -150,7 +150,7 @@ export class CalibrationManager {
       const maxAge = 7 * 24 * 60 * 60 * 1000 // 7 days in ms
 
       if (age > maxAge) {
-        console.log('Calibration expired, removing')
+        // console.log('Calibration expired, removing')
         this.resetCalibration()
         return
       }
@@ -159,7 +159,10 @@ export class CalibrationManager {
       this.restPoseRotations = parsed.restPose || null
       this.isCalibrated = Object.keys(this.calibrationOffsets).length > 0
 
-      console.log('Calibration loaded from storage')
+      // Only log if we actually loaded calibration data
+      // if (this.isCalibrated) {
+      //   console.log('Calibration loaded from storage')
+      // }
     } catch (error) {
       console.error('Failed to load calibration:', error)
     }
@@ -205,7 +208,7 @@ export class CalibrationManager {
 
     this.saveCalibration()
 
-    console.log('Calibration imported')
+    // console.log('Calibration imported')
     return true
   }
 }

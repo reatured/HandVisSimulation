@@ -97,15 +97,15 @@ export default function URDFHandModel({
     const urdfDir = urdfPath.substring(0, urdfPath.lastIndexOf('/'))
     loader.workingPath = urdfDir + '/'
 
-    console.log(`Loading URDF from: ${urdfPath}`)
-    console.log(`Working path set to: ${urdfDir}/`)
+    // console.log(`Loading URDF from: ${urdfPath}`)
+    // console.log(`Working path set to: ${urdfDir}/`)
 
     // Load the URDF file
     loader.load(
       urdfPath,
       (loadedRobot) => {
-        console.log('URDF loaded successfully:', urdfPath)
-        console.log('Robot joints:', Object.keys(loadedRobot.joints))
+        // console.log('URDF loaded successfully:', urdfPath)
+        // console.log('Robot joints:', Object.keys(loadedRobot.joints))
 
         // Apply default rotation and scale adjustments if needed
         loadedRobot.rotation.set(0, 0, 0)
@@ -122,10 +122,10 @@ export default function URDFHandModel({
       (progress) => {
         // Optional: track loading progress
         // Progress can be null or undefined in some cases
-        if (progress && progress.lengthComputable) {
-          const percent = (progress.loaded / progress.total) * 100
-          console.log(`Loading ${urdfPath}: ${percent.toFixed(2)}%`)
-        }
+        // if (progress && progress.lengthComputable) {
+        //   const percent = (progress.loaded / progress.total) * 100
+        //   console.log(`Loading ${urdfPath}: ${percent.toFixed(2)}%`)
+        // }
       },
       (err) => {
         console.error('Failed to load URDF:', err)
@@ -248,7 +248,7 @@ export default function URDFHandModel({
  */
 export function applyMetalMaterial(robotModel) {
   if (!robotModel) {
-    console.warn('Cannot apply metal material: robot model is null')
+    // console.warn('Cannot apply metal material: robot model is null')
     return
   }
 
@@ -278,5 +278,5 @@ export function applyMetalMaterial(robotModel) {
     }
   })
 
-  console.log('Metal material applied to robot model')
+  // console.log('Metal material applied to robot model')
 }
