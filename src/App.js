@@ -138,6 +138,27 @@ export default function App() {
     right: null
   })
 
+  // Raw camera landmarks (MediaPipe 21 points per hand)
+  const [cameraLandmarks, setCameraLandmarks] = useState({
+    left: null,
+    right: null
+  })
+
+  // Persisted landmarks - keeps last known positions even when tracking lost
+  const [persistedLandmarks, setPersistedLandmarks] = useState({
+    left: null,
+    right: null
+  })
+
+  // Manual landmark overrides - user-dragged fingertip positions
+  const [manualLandmarkOverrides, setManualLandmarkOverrides] = useState({
+    left: {},
+    right: {}
+  })
+
+  // Tracking lock - freeze landmarks for manual dragging
+  const [isTrackingLocked, setIsTrackingLocked] = useState(false)
+
   // Gimbal rotation offsets for each hand
   // Default: 90 degrees (π/2 radians) on X-axis for both hands
   const [leftHandGimbal, setLeftHandGimbal] = useState({ x: -Math.PI / 2, y: 0, z: 0 })
@@ -165,6 +186,15 @@ export default function App() {
 
   // Wrist rotation toggle (disable wrist rotation to keep hand orientation fixed)
   const [disableWristRotation, setDisableWristRotation] = useState(false)
+
+  // IK debug data (3D positions from IK solver)
+  const [ikDebugData, setIkDebugData] = useState({
+    left: null,
+    right: null
+  })
+
+  // IK visualization toggle (default: enabled)
+  const [showIKVisualization, setShowIKVisualization] = useState(true)
 
   const [selectedJoint, setSelectedJoint] = useState('wrist')
   const [selectedHand, setSelectedHand] = useState('left') // Which hand to control in manual mode
@@ -295,8 +325,41 @@ export default function App() {
     setCameraHandPositions(positions)
   }, [])
 
+  const handleCameraLandmarks = useCallback((landmarks) => {
+    setCameraLandmarks(landmarks)
+
+    // Update persisted landmarks if tracking is not locked
+    if (!isTrackingLocked) {
+      setPersistedLandmarks(prev => ({
+        left: landmarks.left || prev.left,
+        right: landmarks.right || prev.right
+      }))
+    }
+  }, [isTrackingLocked])
+
+  const handleManualLandmarkDrag = useCallback((dragData) => {
+    const { handSide, landmarkIndex, position } = dragData
+
+    setManualLandmarkOverrides(prev => ({
+      ...prev,
+      [handSide]: {
+        ...prev[handSide],
+        [landmarkIndex]: position
+      }
+    }))
+  }, [])
+
+  const handleResetHandPose = useCallback(() => {
+    setManualLandmarkOverrides({ left: {}, right: {} })
+    setPersistedLandmarks({ left: null, right: null })
+  }, [])
+
   const handleIKJointRotations = useCallback((rotations) => {
     setIkJointRotations(rotations)
+  }, [])
+
+  const handleIKDebugData = useCallback((debugData) => {
+    setIkDebugData(debugData)
   }, [])
 
   const handleControlModeChange = useCallback((mode) => {
@@ -401,6 +464,33 @@ export default function App() {
     setSelectedObject(object)
   }, [])
 
+  // Merge persisted landmarks with manual overrides for IK
+  const finalLandmarksForIK = useMemo(() => {
+    const merged = {
+      left: persistedLandmarks.left ? [...persistedLandmarks.left] : null,
+      right: persistedLandmarks.right ? [...persistedLandmarks.right] : null
+    }
+
+    // Apply manual overrides
+    if (merged.left) {
+      Object.entries(manualLandmarkOverrides.left).forEach(([index, position]) => {
+        if (merged.left[index]) {
+          merged.left[index] = { ...position }
+        }
+      })
+    }
+
+    if (merged.right) {
+      Object.entries(manualLandmarkOverrides.right).forEach(([index, position]) => {
+        if (merged.right[index]) {
+          merged.right[index] = { ...position }
+        }
+      })
+    }
+
+    return merged
+  }, [persistedLandmarks, manualLandmarkOverrides])
+
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
       <Scene3D
@@ -429,12 +519,17 @@ export default function App() {
         onSceneGraphUpdate={handleSceneGraphUpdate}
         selectedObject={selectedObject}
         onSelectObject={handleSelectObject}
+        controlMode={controlMode}
+        ikDebugData={ikDebugData}
+        showIKVisualization={showIKVisualization}
+        onManualLandmarkDrag={handleManualLandmarkDrag}
       />
 
       <HandTrackingCamera
         onHandResults={handleHandResults}
         onJointRotations={handleCameraJointRotations}
         onHandPositions={handleCameraHandPositions}
+        onRawLandmarks={handleCameraLandmarks}
         calibrationManager={calibrationManagerRef.current}
         showPreview={showCameraPreview}
         useQuaternionTracking={useQuaternionTracking}
@@ -445,8 +540,9 @@ export default function App() {
       {/* IK Controller - processes camera data through IK solver when in IK mode */}
       {controlMode === 'ik' && (
         <IKController
-          cameraLandmarks={{ left: null, right: null }} // TODO: Expose raw landmarks from HandTrackingCamera
+          cameraLandmarks={finalLandmarksForIK}
           onIKJointRotations={handleIKJointRotations}
+          onIKDebugData={handleIKDebugData}
           ikOptions={{
             maxIterations: 10,
             convergenceThreshold: 0.001,
@@ -499,6 +595,11 @@ export default function App() {
           onUseQuaternionTrackingChange={setUseQuaternionTracking}
           useThumb3DoF={useThumb3DoF}
           onUseThumb3DoFChange={setUseThumb3DoF}
+          showIKVisualization={showIKVisualization}
+          onShowIKVisualizationChange={setShowIKVisualization}
+          isTrackingLocked={isTrackingLocked}
+          onTrackingLockChange={setIsTrackingLocked}
+          onResetHandPose={handleResetHandPose}
           sceneGraph={sceneGraph}
           selectedObject={selectedObject}
           onSelectObject={handleSelectObject}

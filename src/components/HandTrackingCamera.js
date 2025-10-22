@@ -8,12 +8,13 @@ import { quaternionsToURDFJoints } from '../utils/quaternionToAxisAngles'
 import { createQuaternionFilter } from '../utils/quaternionMotionFilter'
 import { applyThumb3DoFAddon, shouldApplyThumb3DoF, mergeThumbOverrides } from '../utils/thumbAddon3DoF'
 
-export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, calibrationManager, showPreview = true, useQuaternionTracking = false, useThumb3DoF = false, robotRefs = { left: null, right: null } }) {
+export default function HandTrackingCamera({ onHandResults, onJointRotations, onHandPositions, onRawLandmarks, calibrationManager, showPreview = true, useQuaternionTracking = false, useThumb3DoF = false, robotRefs = { left: null, right: null } }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const onHandResultsRef = useRef(onHandResults)
   const onJointRotationsRef = useRef(onJointRotations)
   const onHandPositionsRef = useRef(onHandPositions)
+  const onRawLandmarksRef = useRef(onRawLandmarks)
 
   // State to track horizontal flip
   const [isFlipped, setIsFlipped] = useState(false)
@@ -42,6 +43,10 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
   useEffect(() => {
     onHandPositionsRef.current = onHandPositions
   }, [onHandPositions])
+
+  useEffect(() => {
+    onRawLandmarksRef.current = onRawLandmarks
+  }, [onRawLandmarks])
 
   useEffect(() => {
     let hands = null
@@ -196,6 +201,7 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
       if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         const handRotations = { left: null, right: null }
         const handPositions = { left: null, right: null }
+        const rawLandmarks = { left: null, right: null }
 
         // Process each detected hand
         results.multiHandLandmarks.forEach((landmarks, index) => {
@@ -265,13 +271,15 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
             }
           }
 
-          // Store rotations and positions by hand side
+          // Store rotations, positions, and raw landmarks by hand side
           if (handedness === 'Left') {
             handRotations.left = rotations
             handPositions.left = position
+            rawLandmarks.left = landmarks
           } else {
             handRotations.right = rotations
             handPositions.right = position
+            rawLandmarks.right = landmarks
           }
         })
 
@@ -284,10 +292,18 @@ export default function HandTrackingCamera({ onHandResults, onJointRotations, on
         if (onHandPositionsRef.current) {
           onHandPositionsRef.current(handPositions)
         }
+
+        // Send raw landmarks to parent component
+        if (onRawLandmarksRef.current) {
+          onRawLandmarksRef.current(rawLandmarks)
+        }
       } else {
-        // No hands detected - reset positions but preserve rotations
+        // No hands detected - reset positions and landmarks but preserve rotations
         if (onHandPositionsRef.current) {
           onHandPositionsRef.current({ left: null, right: null })
+        }
+        if (onRawLandmarksRef.current) {
+          onRawLandmarksRef.current({ left: null, right: null })
         }
         // Note: We don't reset onJointRotations - this preserves the last known pose
       }

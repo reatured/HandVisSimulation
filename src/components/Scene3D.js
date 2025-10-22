@@ -5,7 +5,9 @@ import * as THREE from 'three'
 import HandModel from './HandModel'
 import GimbalControl from './GimbalControl'
 import DebugLabels from './DebugLabels'
+import IKVisualization from './IKVisualization'
 import { useSceneGraph } from '../editor/useSceneGraph'
+import { ThumbJointVisualizer } from '../ik'
 
 // Custom gradient ground plane
 function GradientGround() {
@@ -120,7 +122,11 @@ export default function Scene3D({
   showJointGimbals = false,
   onSceneGraphUpdate = null,
   selectedObject = null,
-  onSelectObject = null
+  onSelectObject = null,
+  controlMode = 'camera',
+  ikDebugData = { left: null, right: null },
+  showIKVisualization = true,
+  onManualLandmarkDrag = null
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -259,6 +265,17 @@ export default function Scene3D({
 
       {/* Debug labels for hand identification and scene orientation */}
       <DebugLabels visible={showDebugLabels} />
+
+      {/* IK Debug Visualization - shows IK solver results */}
+      {controlMode === 'ik' && showIKVisualization && (
+        <IKVisualization
+          ikDebugData={ikDebugData}
+          onDrag={onManualLandmarkDrag}
+        />
+      )}
+
+      {/* Thumb Joint Visualizer - shows L10 thumb joints and axes */}
+      <ThumbJointVisualizer />
 
       <OrbitControls ref={orbitControlsRef} makeDefault />
     </Canvas>

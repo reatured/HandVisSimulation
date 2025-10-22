@@ -121,6 +121,11 @@ const InspectorPanel = ({
   onUseQuaternionTrackingChange,
   useThumb3DoF,
   onUseThumb3DoFChange,
+  showIKVisualization,
+  onShowIKVisualizationChange,
+  isTrackingLocked,
+  onTrackingLockChange,
+  onResetHandPose,
   sceneGraph,
   selectedObject,
   onSelectObject
@@ -240,6 +245,36 @@ const InspectorPanel = ({
                         <div className="text-[10px] font-medium">
                           {calibrationStatus?.isCalibrated ? '✓' : '⚠'}
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* IK Controls - IK mode only */}
+                  {isIKMode && (
+                    <div className="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded">
+                      <div className="text-[11px] font-medium text-panel-foreground mb-1.5">
+                        IK Testing
+                      </div>
+                      <div className="text-[10px] text-panel-muted-foreground mb-2 leading-tight">
+                        Drag fingertips in 3D to test IK solver. Lock tracking to prevent camera updates.
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button
+                          variant={isTrackingLocked ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => onTrackingLockChange(!isTrackingLocked)}
+                          className="flex-1 text-[11px] h-7"
+                        >
+                          {isTrackingLocked ? '🔒 Locked' : '🔓 Unlocked'}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onResetHandPose}
+                          className="flex-1 text-[11px] h-7"
+                        >
+                          Reset Pose
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -735,6 +770,26 @@ const InspectorPanel = ({
                 title="Enable full 3-axis thumb rotation (accounts for non-orthogonal URDF axes)"
               >
                 3DOF Thumb
+              </button>
+            )}
+
+            {/* IK Debug Visualization (only in IK mode) */}
+            {isIKMode && (
+              <button
+                onClick={() => {
+                  const newValue = !showIKVisualization
+                  onShowIKVisualizationChange(newValue)
+                  console.log('🎯 [InspectorPanel] IK visualization toggled:', newValue)
+                }}
+                className={cn(
+                  "px-2 py-1.5 rounded text-[10px] font-medium transition-all",
+                  showIKVisualization
+                    ? "bg-cyan-600 text-white"
+                    : "bg-secondary/20 text-muted-foreground hover:bg-secondary/40"
+                )}
+                title="Show IK solver debug visualization (spheres and lines)"
+              >
+                IK Debug
               </button>
             )}
 
