@@ -232,6 +232,76 @@ function calculateThumbRoll(landmarks) {
 }
 
 /**
+ * Calculate finger MCP roll angle
+ * Measures the angle between finger direction and its base direction from wrist
+ * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
+ * @param {number} mcpIdx - MCP landmark index
+ * @param {number} tipIdx - TIP landmark index
+ * @returns {number} - Roll angle in radians
+ */
+function calculateFingerMcpRoll(landmarks, mcpIdx, tipIdx) {
+  const wrist = landmarks[LANDMARKS.WRIST]          // Point 0
+  const mcp = landmarks[mcpIdx]
+  const tip = landmarks[tipIdx]
+  const indexMcp = landmarks[LANDMARKS.INDEX_MCP]   // Point 5
+  const middleMcp = landmarks[LANDMARKS.MIDDLE_MCP] // Point 9
+  const ringMcp = landmarks[LANDMARKS.RING_MCP]     // Point 13
+  const pinkyMcp = landmarks[LANDMARKS.PINKY_MCP]   // Point 17
+
+  // Calculate palm plane normal
+  const v1 = new THREE.Vector3(
+    indexMcp.x - wrist.x,
+    indexMcp.y - wrist.y,
+    indexMcp.z - wrist.z
+  )
+
+  const v2 = new THREE.Vector3(
+    pinkyMcp.x - wrist.x,
+    pinkyMcp.y - wrist.y,
+    pinkyMcp.z - wrist.z
+  )
+
+  const palmNormal = new THREE.Vector3().crossVectors(v1, v2).normalize()
+
+  // Vector 1: MCP to TIP (finger direction)
+  const fingerVector = new THREE.Vector3(
+    tip.x - mcp.x,
+    tip.y - mcp.y,
+    tip.z - mcp.z
+  )
+
+  // Vector 2: WRIST to midpoint of MIDDLE_MCP and RING_MCP (centered reference)
+  const midX = (middleMcp.x + ringMcp.x) / 2
+  const midY = (middleMcp.y + ringMcp.y) / 2
+  const midZ = (middleMcp.z + ringMcp.z) / 2
+
+  const baseVector = new THREE.Vector3(
+    midX - wrist.x,
+    midY - wrist.y,
+    midZ - wrist.z
+  )
+
+  // Project both vectors onto palm plane
+  const fingerDot = fingerVector.dot(palmNormal)
+  const projectedFinger = fingerVector.clone().sub(palmNormal.clone().multiplyScalar(fingerDot))
+  projectedFinger.normalize()
+
+  const baseDot = baseVector.dot(palmNormal)
+  const projectedBase = baseVector.clone().sub(palmNormal.clone().multiplyScalar(baseDot))
+  projectedBase.normalize()
+
+  // Calculate signed angle between the two projected vectors
+  const angle = projectedFinger.angleTo(projectedBase)
+
+  // Use cross product to determine sign (direction of rotation)
+  const cross = new THREE.Vector3().crossVectors(projectedBase, projectedFinger)
+  const sign = cross.dot(palmNormal)
+
+  // Return signed angle (positive or negative based on rotation direction)
+  return sign >= 0 ? angle : -angle
+}
+
+/**
  * Calculate wrist orientation from hand landmarks
  * Uses palm plane to determine hand rotation in 3D space
  * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
@@ -389,6 +459,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.index_pip = indexPipCurl
   joints.index_dip = indexDipCurl
   joints.index_tip = indexDipCurl * 0.7
+  joints.index_roll = 0.21-calculateFingerMcpRoll(landmarks, LANDMARKS.INDEX_MCP, LANDMARKS.INDEX_TIP)
 
   // MIDDLE FINGER
   const middleMcpCurl = calculateFingerCurl(
@@ -414,6 +485,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.middle_pip = middlePipCurl
   joints.middle_dip = middleDipCurl
   joints.middle_tip = middleDipCurl * 0.7
+  joints.middle_roll = calculateFingerMcpRoll(landmarks, LANDMARKS.MIDDLE_MCP, LANDMARKS.MIDDLE_TIP)
 
   // RING FINGER
   const ringMcpCurl = calculateFingerCurl(
@@ -439,6 +511,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.ring_pip = ringPipCurl
   joints.ring_dip = ringDipCurl
   joints.ring_tip = ringDipCurl * 0.7
+  joints.ring_roll = calculateFingerMcpRoll(landmarks, LANDMARKS.RING_MCP, LANDMARKS.RING_TIP)
 
   // PINKY FINGER
   const pinkyMcpCurl = calculateFingerCurl(
@@ -464,6 +537,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.pinky_pip = pinkyPipCurl
   joints.pinky_dip = pinkyDipCurl
   joints.pinky_tip = pinkyDipCurl * 0.7
+  joints.pinky_roll = calculateFingerMcpRoll(landmarks, LANDMARKS.PINKY_MCP, LANDMARKS.PINKY_TIP)
 
   // WRIST - legacy single-axis rotation (kept for compatibility)
   joints.wrist = 0

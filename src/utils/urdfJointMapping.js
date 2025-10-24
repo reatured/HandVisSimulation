@@ -190,8 +190,9 @@ const LINKER_L10_JOINT_MAP = {
   index_mcp: 'index_mcp_pitch',
   index_pip: 'index_pip',
   index_dip: 'index_dip',
+  index_roll: 'index_mcp_roll',
 
-  // Middle finger - 3 DOF
+  // Middle finger - 3 DOF (no roll)
   middle_mcp: 'middle_mcp_pitch',
   middle_pip: 'middle_pip',
   middle_dip: 'middle_dip',
@@ -200,11 +201,13 @@ const LINKER_L10_JOINT_MAP = {
   ring_mcp: 'ring_mcp_pitch',
   ring_pip: 'ring_pip',
   ring_dip: 'ring_dip',
+  ring_roll: 'ring_mcp_roll',
 
   // Pinky - 4 DOF
   pinky_mcp: 'pinky_mcp_pitch',
   pinky_pip: 'pinky_pip',
   pinky_dip: 'pinky_dip',
+  pinky_roll: 'pinky_mcp_roll',
 }
 
 /**
@@ -224,21 +227,25 @@ const LINKER_L20_JOINT_MAP = {
   index_mcp: 'index_mcp_pitch',
   index_pip: 'index_pip',
   index_dip: 'index_dip',
+  index_roll: 'index_mcp_roll',
 
   // Middle finger - 4 DOF
   middle_mcp: 'middle_mcp_pitch',
   middle_pip: 'middle_pip',
   middle_dip: 'middle_dip',
+  middle_roll: 'middle_mcp_roll',
 
   // Ring finger - 4 DOF
   ring_mcp: 'ring_mcp_pitch',
   ring_pip: 'ring_pip',
   ring_dip: 'ring_dip',
+  ring_roll: 'ring_mcp_roll',
 
   // Pinky - 4 DOF
   pinky_mcp: 'pinky_mcp_pitch',
   pinky_pip: 'pinky_pip',
   pinky_dip: 'pinky_dip',
+  pinky_roll: 'pinky_mcp_roll',
 }
 
 /**
