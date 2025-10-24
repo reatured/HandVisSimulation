@@ -210,6 +210,9 @@ export default function Scene3D({
           {/* Hand mesh group rotation locked to [0, 0, 0] */}
           {/* Local axes at hand mesh group level - does not rotate */}
           {showAxes && <axesHelper args={[0.15]} />}
+
+          
+            
           <GimbalControl
             position={[0, 0, 0]}
             rotation={leftCombinedRotation}
@@ -229,7 +232,7 @@ export default function Scene3D({
               onRobotLoaded={onLeftRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
-              cameraLandmarks={cameraLandmarks.left}
+              cameraLandmarks={cameraLandmarks.right}
             />
           </GimbalControl>
         </group>
@@ -260,7 +263,7 @@ export default function Scene3D({
               onRobotLoaded={onRightRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
-              cameraLandmarks={cameraLandmarks.right}
+              cameraLandmarks={cameraLandmarks.left}
             />
           </GimbalControl>
         </group>

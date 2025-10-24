@@ -339,7 +339,7 @@ const InspectorPanel = ({
                     <div className="space-y-2">
                       <div>
                         <div className="text-[10px] text-panel-muted-foreground mb-1">
-                          Left: {(leftHandZRotation * 180 / Math.PI).toFixed(0)}°
+                          Left: 90°
                         </div>
                         <div className="grid grid-cols-2 gap-1.5">
                           <Button

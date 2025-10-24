@@ -104,18 +104,23 @@ function HandModelInner({
   return (
     <group position={position} rotation={[0, 0, zRotationOffset]}>
       {renderModel()}
-      {/* Thumb target cursor for IK visualization */}
-      {cameraLandmarks && (
-        <ThumbTargetCursor landmarks={cameraLandmarks} side={side} />
-      )}
     </group>
   )
 }
 
 export default function HandModel(props) {
+  const { cameraLandmarks, side, position = [0, 0, 0], zRotationOffset = 0 } = props
+
   return (
-    <Suspense fallback={null}>
-      <HandModelInner {...props} />
-    </Suspense>
+    <>
+      <Suspense fallback={null}>
+        <HandModelInner {...props} />
+      </Suspense>
+      {cameraLandmarks && (
+        <group position={position} rotation={[Math.PI / 2, Math.PI / 2, -Math.PI / 2]}>
+          <ThumbTargetCursor landmarks={cameraLandmarks} side={side} />
+        </group>
+      )}
+    </>
   )
 }

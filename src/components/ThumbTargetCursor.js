@@ -1,19 +1,21 @@
 /**
  * FingertipTargetCursors Component
  *
- * Displays 3D cube cursors showing all 5 fingertip target positions
- * from hand tracking data, positioned relative to the wrist.
+ * Displays 3D cube cursors showing:
+ * - 5 fingertip target positions (thumb, index, middle, ring, pinky)
+ * - 4 MCP joint positions (index, middle, ring, pinky - excluding thumb)
+ * All positioned relative to the wrist from hand tracking data.
  *
  * This serves as the IK target visualization for all fingers.
  * Includes position smoothing to eliminate jittery movement.
- * Includes lines from wrist origin to each fingertip target position.
+ * Includes lines from wrist origin to each target position.
  */
 
 import { useRef, useState, useEffect } from 'react'
-import { Line } from '@react-three/drei'
+import { Line, Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-export default function ThumbTargetCursor({ landmarks, side }) {
+export default function ThumbTargetCursor({ landmarks, side, rotation = [Math.PI / 2, 0, Math.PI / 2] }) {
   // Smoothing parameters
   const ALPHA = 0.2 // Smoothing factor (0-1): lower = smoother, higher = more responsive
 
@@ -29,12 +31,18 @@ export default function ThumbTargetCursor({ landmarks, side }) {
     // MediaPipe landmark indices
     const WRIST = 0
     const THUMB_TIP = 4
+    const INDEX_MCP = 5
     const INDEX_TIP = 8
+    const MIDDLE_MCP = 9
     const MIDDLE_TIP = 12
+    const RING_MCP = 13
     const RING_TIP = 16
+    const PINKY_MCP = 17
     const PINKY_TIP = 20
 
     const wrist = landmarks[WRIST]
+
+    // Fingertip targets
     const fingertips = [
       { name: 'thumb', landmark: landmarks[THUMB_TIP] },
       { name: 'index', landmark: landmarks[INDEX_TIP] },
@@ -43,10 +51,21 @@ export default function ThumbTargetCursor({ landmarks, side }) {
       { name: 'pinky', landmark: landmarks[PINKY_TIP] }
     ]
 
+    // MCP joint targets (4 fingers, excluding thumb)
+    const mcpJoints = [
+      { name: 'index_mcp', landmark: landmarks[INDEX_MCP] },
+      { name: 'middle_mcp', landmark: landmarks[MIDDLE_MCP] },
+      { name: 'ring_mcp', landmark: landmarks[RING_MCP] },
+      { name: 'pinky_mcp', landmark: landmarks[PINKY_MCP] }
+    ]
+
+    // Combine all targets
+    const allTargets = [...fingertips, ...mcpJoints]
+
     // Calculate raw positions relative to wrist
     // MediaPipe: x right, y down, z toward camera (negative = away)
     // Three.js: x right, y up, z toward viewer (positive = toward)
-    const rawPositions = fingertips.map(({ name, landmark }) => ({
+    const rawPositions = allTargets.map(({ name, landmark }) => ({
       name,
       pos: {
         x: landmark.x - wrist.x,       // Relative X (no scaling)
@@ -94,7 +113,7 @@ export default function ThumbTargetCursor({ landmarks, side }) {
   const color = side === 'left' ? '#00BFFF' : '#FF6B6B'
 
   return (
-    <group>
+    <group rotation={rotation}>
       {/* Wrist origin marker */}
       <mesh position={[0, 0, 0]}>
         <boxGeometry args={[0.02, 0.02, 0.02]} />
@@ -107,8 +126,8 @@ export default function ThumbTargetCursor({ landmarks, side }) {
         />
       </mesh>
 
-      {/* Lines and cubes for all 5 fingertips */}
-      {smoothedPos.map(({ name, pos }) => (
+      {/* Fingertips with position labels (first 5 targets) */}
+      {smoothedPos.slice(0, 5).map(({ name, pos }) => (
         <group key={name}>
           {/* Line from wrist origin to fingertip target */}
           <Line
@@ -123,6 +142,46 @@ export default function ThumbTargetCursor({ landmarks, side }) {
           />
 
           {/* Cube at fingertip target position */}
+          <mesh position={[pos.x, pos.y, pos.z]}>
+            <boxGeometry args={[0.02, 0.02, 0.02]} />
+            <meshStandardMaterial
+              color={color}
+              transparent
+              opacity={0.8}
+              emissive={color}
+              emissiveIntensity={0.5}
+            />
+          </mesh>
+
+          {/* Position text label above cube */}
+          <Text
+            position={[pos.x, pos.y + 0.03, pos.z]}
+            fontSize={0.005}
+            color={color}
+            anchorX="center"
+            anchorY="bottom"
+          >
+            {`(${pos.x.toFixed(3)}, ${pos.y.toFixed(3)}, ${pos.z.toFixed(3)})`}
+          </Text>
+        </group>
+      ))}
+
+      {/* MCP joints without labels (last 4 targets) */}
+      {smoothedPos.slice(5).map(({ name, pos }) => (
+        <group key={name}>
+          {/* Line from wrist origin to MCP target */}
+          <Line
+            points={[
+              [0, 0, 0],  // Wrist origin
+              [pos.x, pos.y, pos.z]  // MCP target
+            ]}
+            color={color}
+            lineWidth={2}
+            transparent
+            opacity={0.6}
+          />
+
+          {/* Cube at MCP target position */}
           <mesh position={[pos.x, pos.y, pos.z]}>
             <boxGeometry args={[0.02, 0.02, 0.02]} />
             <meshStandardMaterial
