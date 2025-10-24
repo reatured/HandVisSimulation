@@ -427,7 +427,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.thumb_yaw = calculateThumbYaw(landmarks)
 
   // Calculate thumb roll from hand landmarks
-  joints.thumb_roll = calculateThumbRoll(landmarks)
+  joints.thumb_roll = 0.56 - calculateThumbRoll(landmarks)
 
   joints.thumb_mcp = thumbCmcCurl
   joints.thumb_pip = thumbMcpCurl

@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { Text } from '@react-three/drei'
 import AbilityHand from '../models/AbilityHand'
 import InspireHand from '../models/InspireHand'
@@ -16,7 +16,8 @@ function HandModelInner({
   onRobotLoaded = null,
   useMultiDoF = false,
   showJointGimbals = false,
-  cameraLandmarks = null
+  cameraLandmarks = null,
+  onPalmLengthCalculated = null
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -34,6 +35,7 @@ function HandModelInner({
               onRobotLoaded={onRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
+              onPalmLengthCalculated={onPalmLengthCalculated}
             />
           )
         }
@@ -72,6 +74,7 @@ function HandModelInner({
               onRobotLoaded={onRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
+              onPalmLengthCalculated={onPalmLengthCalculated}
             />
           )
         }
@@ -110,14 +113,40 @@ function HandModelInner({
 
 export default function HandModel(props) {
   const { cameraLandmarks, side, position = [0, 0, 0], zRotationOffset = 0 } = props
+  const [modelPalmLength, setModelPalmLength] = useState(null)
+  const [palmScaleMultiplier, setPalmScaleMultiplier] = useState(1)
+
+  // Calculate scale multiplier when both model palm length and camera landmarks are available
+  useEffect(() => {
+    if (!modelPalmLength || !cameraLandmarks || cameraLandmarks.length < 21) {
+      setPalmScaleMultiplier(1)
+      return
+    }
+
+    // Get wrist (landmark 0) and pinky MCP (landmark 17) from camera
+    const wrist = cameraLandmarks[0]
+    const pinkyMcp = cameraLandmarks[17]
+
+    // Calculate camera palm length (Euclidean distance)
+    const dx = pinkyMcp.x - wrist.x
+    const dy = pinkyMcp.y - wrist.y
+    const dz = pinkyMcp.z - wrist.z
+    const cameraPalmLength = Math.sqrt(dx * dx + dy * dy + dz * dz)
+
+    // Calculate multiplier: model distance / camera distance
+    const multiplier = modelPalmLength / cameraPalmLength
+    setPalmScaleMultiplier(multiplier)
+
+    console.log(`📐 Scale multiplier: ${multiplier.toFixed(4)} (model: ${modelPalmLength.toFixed(4)}, camera: ${cameraPalmLength.toFixed(4)})`)
+  }, [modelPalmLength, cameraLandmarks])
 
   return (
     <>
       <Suspense fallback={null}>
-        <HandModelInner {...props} />
+        <HandModelInner {...props} onPalmLengthCalculated={setModelPalmLength} />
       </Suspense>
       {cameraLandmarks && (
-        <group position={position} rotation={[Math.PI /2, -Math.PI /2, 0]}>
+        <group position={position} rotation={[Math.PI /2, -Math.PI /2, 0]} scale={palmScaleMultiplier}>
           <ThumbTargetCursor landmarks={cameraLandmarks} side={side} />
         </group>
       )}

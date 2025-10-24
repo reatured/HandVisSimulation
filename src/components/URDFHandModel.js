@@ -21,7 +21,8 @@ export default function URDFHandModel({
   cameraPosition = null,
   onRobotLoaded = null,
   useMultiDoF = false,
-  showJointGimbals = false
+  showJointGimbals = false,
+  onPalmLengthCalculated = null
 }) {
   const [robot, setRobot] = useState(null)
   const [error, setError] = useState(null)
@@ -121,6 +122,31 @@ export default function URDFHandModel({
         const jointConfig = parseJointConfig(loadedRobot)
         const parsedSemanticMapping = createSemanticMapping(jointConfig)
         console.log('🚀 ========== PARSING COMPLETE ==========\n');
+
+        // Calculate palm length (wrist to pinky MCP) for cursor scaling
+        if (onPalmLengthCalculated) {
+          // Find pinky MCP joint (case insensitive search)
+          const jointNames = Object.keys(loadedRobot.joints)
+          const pinkyMcpJointName = jointNames.find(name =>
+            name.toLowerCase().includes('pinky') && name.toLowerCase().includes('mcp')
+          )
+
+          if (pinkyMcpJointName) {
+            const pinkyMcpJoint = loadedRobot.joints[pinkyMcpJointName]
+            if (pinkyMcpJoint) {
+              // Get world position of the joint
+              const worldPos = new THREE.Vector3()
+              pinkyMcpJoint.getWorldPosition(worldPos)
+
+              // Calculate distance from wrist (origin at 0,0,0)
+              const palmLength = worldPos.length()
+              console.log(`📏 Palm length calculated: ${palmLength.toFixed(4)} (from wrist to ${pinkyMcpJointName})`)
+              onPalmLengthCalculated(palmLength)
+            }
+          } else {
+            console.warn('⚠️ Could not find pinky MCP joint for palm length calculation')
+          }
+        }
 
         setRobot(loadedRobot)
         setSemanticMapping(parsedSemanticMapping)
