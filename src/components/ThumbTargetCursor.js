@@ -62,17 +62,69 @@ export default function ThumbTargetCursor({ landmarks, side, rotation = [Math.PI
     // Combine all targets
     const allTargets = [...fingertips, ...mcpJoints]
 
-    // Calculate raw positions relative to wrist
+    // Build hand-oriented coordinate system
+    const middleMcp = landmarks[MIDDLE_MCP]
+    const ringMcp = landmarks[RING_MCP]
+    const indexMcp = landmarks[INDEX_MCP]
+    const pinkyMcp = landmarks[PINKY_MCP]
+
+    // Forward vector: wrist to midpoint between middle and ring MCPs
+    const midPoint = {
+      x: (middleMcp.x + ringMcp.x) / 2,
+      y: (middleMcp.y + ringMcp.y) / 2,
+      z: (middleMcp.z + ringMcp.z) / 2
+    }
+    const forward = new THREE.Vector3(
+      midPoint.x - wrist.x,
+      midPoint.y - wrist.y,
+      midPoint.z - wrist.z
+    ).normalize()
+
+    // Hand width vector (index to pinky MCP) - only used to compute normal
+    const widthVec = new THREE.Vector3(
+      pinkyMcp.x - indexMcp.x,
+      pinkyMcp.y - indexMcp.y,
+      pinkyMcp.z - indexMcp.z
+    )
+
+    // Up vector: normal to the plane (forward × width)
+    const up = new THREE.Vector3().crossVectors(forward, widthVec).normalize()
+
+    // Right vector: perpendicular to both (up × forward)
+    const right = new THREE.Vector3().crossVectors(up, forward).normalize()
+
+    // Create transformation matrix from hand basis vectors
+    // Matrix columns are the basis vectors
+    const handMatrix = new THREE.Matrix4()
+    handMatrix.makeBasis(right, up, forward)
+
+    // Invert to transform from world space to hand space
+    const invHandMatrix = handMatrix.clone().invert()
+
+    // Calculate positions in hand-oriented coordinate system
     // MediaPipe: x right, y down, z toward camera (negative = away)
     // Three.js: x right, y up, z toward viewer (positive = toward)
-    const rawPositions = allTargets.map(({ name, landmark }) => ({
-      name,
-      pos: {
-        x: landmark.x - wrist.x,       // Relative X (no scaling)
-        y: -(landmark.y - wrist.y),    // Invert Y axis
-        z: -(landmark.z - wrist.z)     // Invert Z axis
+    const rawPositions = allTargets.map(({ name, landmark }) => {
+      // Calculate relative position in MediaPipe space
+      const relativeVec = new THREE.Vector3(
+        landmark.x - wrist.x,
+        landmark.y - wrist.y,
+        landmark.z - wrist.z
+      )
+
+      // Transform to hand-oriented space
+      const transformedVec = relativeVec.applyMatrix4(invHandMatrix)
+
+      // Apply MediaPipe → Three.js axis conversions
+      return {
+        name,
+        pos: {
+          x: transformedVec.x,        // Keep X as-is
+          y: -transformedVec.y,       // Invert Y (MediaPipe down → Three.js up)
+          z: -transformedVec.z        // Invert Z (MediaPipe toward camera → Three.js away)
+        }
       }
-    }))
+    })
 
     // Apply exponential moving average smoothing
     if (previousPosRef.current === null) {

@@ -117,7 +117,7 @@ export default function HandModel(props) {
         <HandModelInner {...props} />
       </Suspense>
       {cameraLandmarks && (
-        <group position={position} rotation={[Math.PI / 2, Math.PI / 2, -Math.PI / 2]}>
+        <group position={position} rotation={[Math.PI /2, -Math.PI /2, 0]}>
           <ThumbTargetCursor landmarks={cameraLandmarks} side={side} />
         </group>
       )}
