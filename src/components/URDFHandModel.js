@@ -28,6 +28,7 @@ export default function URDFHandModel({
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [semanticMapping, setSemanticMapping] = useState(null)
+  const [mimicJointNames, setMimicJointNames] = useState(new Set())
   const groupRef = useRef()
 
   // Load URDF model
@@ -148,6 +149,17 @@ export default function URDFHandModel({
           }
         }
 
+        // Detect mimic joints to avoid setting them directly
+        const mimicJoints = new Set()
+        Object.values(loadedRobot.joints).forEach(joint => {
+          if (joint.mimicJoint) {
+            // This joint mimics another joint, don't set it directly
+            mimicJoints.add(joint.name)
+          }
+        })
+        console.log('🔗 Detected mimic joints:', Array.from(mimicJoints))
+        setMimicJointNames(mimicJoints)
+
         setRobot(loadedRobot)
         setSemanticMapping(parsedSemanticMapping)
         setLoading(false)
@@ -231,6 +243,12 @@ export default function URDFHandModel({
               const axisValue = angleData[axis] || 0
               const [lower, upper] = jointMapping.limits[axis]
 
+              // Skip mimic joints - they will be automatically updated by their master joint
+              if (mimicJointNames.has(urdfJointName)) {
+                console.log(`⏭️  Skipping mimic joint: ${urdfJointName}`)
+                return
+              }
+
               // Apply with dynamic limits
               const joint = robot.joints[urdfJointName]
               if (joint) {
@@ -253,6 +271,12 @@ export default function URDFHandModel({
             return
           }
 
+          // Skip mimic joints - they will be automatically updated by their master joint
+          if (mimicJointNames.has(urdfJointName)) {
+            // console.log(`⏭️  Skipping mimic joint: ${urdfJointName}`)
+            return
+          }
+
           const joint = robot.joints[urdfJointName]
           if (!joint) {
             return
@@ -268,7 +292,7 @@ export default function URDFHandModel({
         }
       })
     }
-  }, [robot, jointRotations, modelPath, cameraPosition, useMultiDoF, semanticMapping])
+  }, [robot, jointRotations, modelPath, cameraPosition, useMultiDoF, semanticMapping, mimicJointNames])
 
   // Render loading state
   if (loading) {
