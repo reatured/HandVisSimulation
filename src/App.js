@@ -103,6 +103,22 @@ const createInitialJointRotations = () => {
       joints[`${finger}_${segment}`] = 0
     })
   })
+
+  // Log joints in detail
+  console.log('🦾 [Joint Initialization] Created joint structure:')
+  console.log('   Wrist:', joints.wrist)
+  console.log('   Total joints:', Object.keys(joints).length)
+  console.log('\n   Joint breakdown by finger:')
+  fingers.forEach(finger => {
+    console.log(`   ${finger.toUpperCase()}:`, {
+      mcp: joints[`${finger}_mcp`],
+      pip: joints[`${finger}_pip`],
+      dip: joints[`${finger}_dip`],
+      tip: joints[`${finger}_tip`]
+    })
+  })
+  console.log('\n   Complete joints object:', JSON.stringify(joints, null, 2))
+
   return joints
 }
 
@@ -117,10 +133,10 @@ export default function App() {
   const [handTrackingData, setHandTrackingData] = useState(null)
 
   // Separate joint rotations for left and right hands
-  const [manualJointRotations, setManualJointRotations] = useState({
+  const [manualJointRotations, setManualJointRotations] = useState(() => ({
     left: createInitialJointRotations(),
     right: createInitialJointRotations()
-  })
+  }))
   const [cameraJointRotations, setCameraJointRotations] = useState({
     left: {},
     right: {}

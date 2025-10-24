@@ -122,6 +122,116 @@ function calculateFingerSpread(landmarks, fingerMcpIdx, referenceMcpIdx) {
 }
 
 /**
+ * Calculate thumb yaw angle
+ * Measures the angle between thumb direction and hand width in a plane perpendicular to hand forward
+ * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
+ * @returns {number} - Yaw angle in radians
+ */
+function calculateThumbYaw(landmarks) {
+  const wrist = landmarks[LANDMARKS.WRIST]           // Point 0
+  const thumbCmc = landmarks[LANDMARKS.THUMB_CMC]    // Point 1
+  const thumbMcp = landmarks[LANDMARKS.THUMB_MCP]    // Point 2
+  const indexMcp = landmarks[LANDMARKS.INDEX_MCP]    // Point 5
+  const middleMcp = landmarks[LANDMARKS.MIDDLE_MCP]  // Point 9
+  const pinkyMcp = landmarks[LANDMARKS.PINKY_MCP]    // Point 17
+
+  // Plane normal: hand forward direction (WRIST to MIDDLE_MCP)
+  const planeNormal = new THREE.Vector3(
+    middleMcp.x - wrist.x,
+    middleMcp.y - wrist.y,
+    middleMcp.z - wrist.z
+  )
+  planeNormal.normalize()
+
+  // Vector 1: Thumb direction (THUMB_CMC to THUMB_MCP)
+  const thumbVector = new THREE.Vector3(
+    thumbMcp.x - wrist.x,
+    thumbMcp.y - wrist.y,
+    thumbMcp.z - wrist.z
+  )
+
+  // Vector 2: Hand width direction (PINKY_MCP to INDEX_MCP)
+  const handWidthVector = new THREE.Vector3(
+    indexMcp.x - pinkyMcp.x,
+    indexMcp.y - pinkyMcp.y,
+    indexMcp.z - pinkyMcp.z
+  )
+
+  // Project both vectors onto the plane perpendicular to the normal
+  // v_projected = v - (v · n)n
+  const thumbDot = thumbVector.dot(planeNormal)
+  const projectedThumb = thumbVector.clone().sub(planeNormal.clone().multiplyScalar(thumbDot))
+  projectedThumb.normalize()
+
+  const widthDot = handWidthVector.dot(planeNormal)
+  const projectedWidth = handWidthVector.clone().sub(planeNormal.clone().multiplyScalar(widthDot))
+  projectedWidth.normalize()
+
+  // Calculate angle between the two projected vectors
+  return projectedThumb.angleTo(projectedWidth) * 2.5
+}
+
+/**
+ * Calculate thumb roll angle
+ * Measures the rotation of the thumb around its longitudinal axis
+ * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
+ * @returns {number} - Roll angle in radians
+ */
+function calculateThumbRoll(landmarks) {
+  // First check thumb yaw - if thumb is not abducted enough, roll is unreliable
+  const thumbYaw = calculateThumbYaw(landmarks)
+  const yawThreshold = 30 * Math.PI / 180  // 30 degrees in radians (≈0.524)
+
+  if (thumbYaw < yawThreshold) {
+    return 0  // Thumb not abducted enough to measure roll
+  }
+
+  // Define palm plane using WRIST, INDEX_MCP, PINKY_MCP
+  const wrist = landmarks[1]        // Point 0
+  const thumbIp = landmarks[4]   // Point 3
+  const indexMcp = landmarks[LANDMARKS.INDEX_MCP] // Point 5
+  const pinkyMcp = landmarks[LANDMARKS.PINKY_MCP] // Point 17
+
+  // Calculate palm plane normal
+  const v1 = new THREE.Vector3(
+    indexMcp.x - wrist.x,
+    indexMcp.y - wrist.y,
+    indexMcp.z - wrist.z
+  )
+
+  const v2 = new THREE.Vector3(
+    pinkyMcp.x - wrist.x,
+    pinkyMcp.y - wrist.y,
+    pinkyMcp.z - wrist.z
+  )
+
+  const palmNormal = new THREE.Vector3().crossVectors(v1, v2).normalize()
+
+  // Vector 1: WRIST to THUMB_IP
+  const thumbVector = new THREE.Vector3(
+    thumbIp.x - wrist.x,
+    thumbIp.y - wrist.y,
+    thumbIp.z - wrist.z
+  )
+
+  // Project thumb vector onto palm plane
+  const thumbDot = thumbVector.dot(palmNormal)
+  const projectedThumb = thumbVector.clone().sub(palmNormal.clone().multiplyScalar(thumbDot))
+  projectedThumb.normalize()
+
+  // Vector 2: WRIST to INDEX_MCP (already in palm plane)
+  const indexVector = new THREE.Vector3(
+    indexMcp.x - wrist.x,
+    indexMcp.y - wrist.y,
+    indexMcp.z - wrist.z
+  )
+  indexVector.normalize()
+
+  // Calculate angle between projected thumb and index direction
+  return projectedThumb.angleTo(indexVector)
+}
+
+/**
  * Calculate wrist orientation from hand landmarks
  * Uses palm plane to determine hand rotation in 3D space
  * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
@@ -244,10 +354,16 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.INDEX_MCP
   )
 
-  joints.thumb_mcp = thumbMcpCurl
-  joints.thumb_pip = thumbIpCurl
-  joints.thumb_dip = thumbIpCurl * 0.8 // DIP typically follows IP
-  joints.thumb_tip = thumbIpCurl * 0.5
+  joints.thumb_mcp = thumbCmcCurl
+  joints.thumb_pip = thumbMcpCurl
+  joints.thumb_dip = thumbIpCurl // DIP typically follows IP
+  joints.thumb_tip = thumbIpCurl * 0.8
+
+  // Calculate thumb yaw from hand landmarks
+  joints.thumb_yaw = calculateThumbYaw(landmarks)
+
+  // Calculate thumb roll from hand landmarks
+  joints.thumb_roll = calculateThumbRoll(landmarks)
 
   // INDEX FINGER
   const indexMcpCurl = calculateFingerCurl(

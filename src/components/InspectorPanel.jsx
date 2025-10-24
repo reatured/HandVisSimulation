@@ -549,16 +549,8 @@ const InspectorPanel = ({
                               // Also check for typo version "thunb" instead of "thumb" (L6 URDF has this typo)
                               const urdfJointNameTypo = urdfJointName.replace('thumb', 'thunb')
 
-                              // Debug logging (only for thumb_cmc to avoid spam)
-                              if (jointName === 'thumb_cmc' && cameraData) {
-                                console.log('🔍 [InspectorPanel] Camera angle lookup:')
-                                console.log('  Joint:', jointName, 'Axis:', axis)
-                                console.log('  Looking for:', urdfJointName)
-                                console.log('  Camera data keys:', Object.keys(cameraData))
-                                console.log('  Found value:', cameraData[urdfJointName])
-                              }
-
-                              if (cameraData) {
+                              // Only look up camera angles when not in manual mode (optimization)
+                              if (!isManualMode && cameraData) {
                                 if (cameraData[urdfJointName] !== undefined) {
                                   cameraAngle = cameraData[urdfJointName]
                                 } else if (cameraData[urdfJointNameTypo] !== undefined) {
@@ -570,7 +562,7 @@ const InspectorPanel = ({
                                 <div key={axis} className="mb-2 last:mb-0">
                                   <div className="flex items-center justify-between mb-1">
                                     <label className="text-[10px] font-medium text-panel-muted-foreground">
-                                      {axis.toUpperCase()}
+                                      {axis.toUpperCase()} ok
                                     </label>
                                     <span className="text-[10px] text-panel-muted-foreground">
                                       {(currentValue * 180 / Math.PI).toFixed(0)}°

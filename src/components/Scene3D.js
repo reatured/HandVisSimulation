@@ -267,15 +267,15 @@ export default function Scene3D({
       <DebugLabels visible={showDebugLabels} />
 
       {/* IK Debug Visualization - shows IK solver results */}
-      {controlMode === 'ik' && showIKVisualization && (
+      {/* {controlMode === 'ik' && showIKVisualization && (
         <IKVisualization
           ikDebugData={ikDebugData}
           onDrag={onManualLandmarkDrag}
         />
-      )}
+      )} */}
 
       {/* Thumb Joint Visualizer - shows L10 thumb joints and axes */}
-      <ThumbJointVisualizer />
+      {/* <ThumbJointVisualizer /> */}
 
       <OrbitControls ref={orbitControlsRef} makeDefault />
     </Canvas>

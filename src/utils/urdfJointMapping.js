@@ -150,6 +150,8 @@ const LINKER_L6_JOINT_MAP = {
   thumb_mcp: 'thunb_cmc_roll',    // Using cmc_roll as MCP equivalent
   thumb_pip: 'thumb_cmc_pitch',   // Using cmc_pitch as PIP equivalent
   thumb_dip: 'thumb_dip',
+  thumb_roll: 'thunb_cmc_roll',   // Direct control of roll axis
+  // Note: L6 does not have thumb_yaw joint
 
   // Index finger - 2 DOF
   index_mcp: 'index_mcp_pitch',
@@ -181,6 +183,8 @@ const LINKER_L10_JOINT_MAP = {
   thumb_mcp: 'thumb_cmc_pitch',   // Using cmc_pitch as primary control
   thumb_pip: 'thumb_mcp',
   thumb_dip: 'thumb_ip',
+  thumb_roll: 'thumb_cmc_roll',   // Direct control of roll axis
+  thumb_yaw: 'thumb_cmc_yaw',     // Direct control of yaw axis
 
   // Index finger - 4 DOF
   index_mcp: 'index_mcp_pitch',
@@ -213,6 +217,8 @@ const LINKER_L20_JOINT_MAP = {
   thumb_mcp: 'thumb_cmc_pitch',   // Using cmc_pitch as primary control
   thumb_pip: 'thumb_mcp',
   thumb_dip: 'thumb_ip',
+  thumb_roll: 'thumb_cmc_roll',   // Direct control of roll axis
+  thumb_yaw: 'thumb_cmc_yaw',     // Direct control of yaw axis
 
   // Index finger - 4 DOF
   index_mcp: 'index_mcp_pitch',
