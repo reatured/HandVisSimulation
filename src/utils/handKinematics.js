@@ -423,17 +423,18 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
     LANDMARKS.THUMB_MCP,
     LANDMARKS.INDEX_MCP
   )
+  // Calculate thumb yaw from hand landmarks
+  joints.thumb_yaw = calculateThumbYaw(landmarks)
+
+  // Calculate thumb roll from hand landmarks
+  joints.thumb_roll = calculateThumbRoll(landmarks)
 
   joints.thumb_mcp = thumbCmcCurl
   joints.thumb_pip = thumbMcpCurl
   joints.thumb_dip = thumbIpCurl // DIP typically follows IP
   joints.thumb_tip = thumbIpCurl * 0.8
 
-  // Calculate thumb yaw from hand landmarks
-  joints.thumb_yaw = calculateThumbYaw(landmarks)
-
-  // Calculate thumb roll from hand landmarks
-  joints.thumb_roll = calculateThumbRoll(landmarks)
+  
 
   // INDEX FINGER
   const indexMcpCurl = calculateFingerCurl(
@@ -460,6 +461,7 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.index_dip = indexDipCurl
   joints.index_tip = indexDipCurl * 0.7
   joints.index_roll = 0.21-calculateFingerMcpRoll(landmarks, LANDMARKS.INDEX_MCP, LANDMARKS.INDEX_TIP)
+
 
   // MIDDLE FINGER
   const middleMcpCurl = calculateFingerCurl(

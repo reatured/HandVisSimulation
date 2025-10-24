@@ -3,6 +3,7 @@ import { Text } from '@react-three/drei'
 import AbilityHand from '../models/AbilityHand'
 import InspireHand from '../models/InspireHand'
 import URDFHandModel from './URDFHandModel'
+import ThumbTargetCursor from './ThumbTargetCursor'
 import { hasURDFSupport } from '../utils/urdfConfig'
 
 function HandModelInner({
@@ -14,7 +15,8 @@ function HandModelInner({
   zRotationOffset = 0,
   onRobotLoaded = null,
   useMultiDoF = false,
-  showJointGimbals = false
+  showJointGimbals = false,
+  cameraLandmarks = null
 }) {
   // Select the appropriate model component based on modelPath
   const renderModel = () => {
@@ -102,6 +104,10 @@ function HandModelInner({
   return (
     <group position={position} rotation={[0, 0, zRotationOffset]}>
       {renderModel()}
+      {/* Thumb target cursor for IK visualization */}
+      {cameraLandmarks && (
+        <ThumbTargetCursor landmarks={cameraLandmarks} side={side} />
+      )}
     </group>
   )
 }

@@ -539,6 +539,7 @@ export default function App() {
         ikDebugData={ikDebugData}
         showIKVisualization={showIKVisualization}
         onManualLandmarkDrag={handleManualLandmarkDrag}
+        cameraLandmarks={cameraLandmarks}
       />
 
       <HandTrackingCamera

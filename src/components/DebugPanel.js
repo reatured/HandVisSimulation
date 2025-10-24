@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { landmarksToRotations3D } from '../utils/positionToRotation'
+import { landmarksToJointRotations } from '../utils/handKinematics'
 
 /**
  * DebugPanel Component
- * Displays 3-axis rotation data (pitch, yaw, roll) converted from hand landmark positions
+ * Displays joint angles (curl values) in real-time from hand landmark positions
  */
 export default function DebugPanel({
   onReset,
@@ -13,14 +13,14 @@ export default function DebugPanel({
   // State for selected hand
   const [selectedHand, setSelectedHand] = useState('left')
 
-  // State to persist last valid rotation data
-  const [lastValidRotations, setLastValidRotations] = useState(null)
+  // State to persist last valid joint angles
+  const [lastValidJoints, setLastValidJoints] = useState(null)
 
   // Convert radians to degrees and format (1 decimal place)
   const formatDeg = (radians) => ((radians || 0) * 180 / Math.PI).toFixed(1)
 
-  // Convert position data to 3-axis rotations using the new converter
-  const convertedRotations3D = (() => {
+  // Convert position data to joint rotations using handKinematics
+  const convertedJoints = (() => {
     if (!handTrackingData || !handTrackingData.multiHandLandmarks) {
       return null
     }
@@ -44,16 +44,17 @@ export default function DebugPanel({
       return null
     }
 
-    // Convert landmarks to 3-axis rotations
-    return landmarksToRotations3D(selectedLandmarks, selectedHandedness)
+    // Convert landmarks to joint rotations and extract joints object
+    const result = landmarksToJointRotations(selectedLandmarks, selectedHandedness)
+    return result.joints
   })()
 
-  // Update last valid rotations when new valid data is available
+  // Update last valid joints when new valid data is available
   useEffect(() => {
-    if (convertedRotations3D) {
-      setLastValidRotations(convertedRotations3D)
+    if (convertedJoints) {
+      setLastValidJoints(convertedJoints)
     }
-  }, [convertedRotations3D])
+  }, [convertedJoints])
 
   // Finger names and segments
   const fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
@@ -156,8 +157,8 @@ export default function DebugPanel({
         </button>
       </div>
 
-      {/* 3-Axis Rotation Data - Main Display */}
-      {/* Joint Rotations Grid */}
+      {/* Joint Angles - Main Display */}
+      {/* Joint Angles Grid */}
       <div style={{
         fontWeight: 'bold',
         marginBottom: '4px',
@@ -165,7 +166,7 @@ export default function DebugPanel({
         borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
         paddingBottom: '2px'
       }}>
-        Joint Rotations (deg) - 3-Axis Data
+        Joint Angles (deg) - Curl Values
       </div>
 
           {/* Grid Table */}
@@ -215,24 +216,87 @@ export default function DebugPanel({
                       </td>
                       {fingers.map(finger => {
                         const jointName = `${finger}_${segment}`
-                        const jointData = lastValidRotations?.[jointName] || { pitch: 0, yaw: 0, roll: 0 }
+                        const jointAngle = lastValidJoints?.[jointName] || 0
 
                         return (
                           <td key={jointName} style={{
-                            padding: '2px',
+                            padding: '4px',
                             textAlign: 'center',
                             borderLeft: finger !== 'thumb' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                            lineHeight: '1.3'
+                            fontSize: '11px',
+                            color: '#4ecdc4',
+                            fontWeight: 'bold'
                           }}>
-                            <div style={{ color: '#ff6b6b' }}>P:{formatDeg(jointData.pitch)}</div>
-                            <div style={{ color: '#4ecdc4' }}>Y:{formatDeg(jointData.yaw)}</div>
-                            <div style={{ color: '#ffe66d' }}>R:{formatDeg(jointData.roll)}</div>
+                            {formatDeg(jointAngle)}°
                           </td>
                         )
                       })}
                     </tr>
                   )
                 })}
+
+                {/* MCP_ROLL row - show roll angles for fingers that have them */}
+                <tr>
+                  <td style={{
+                    padding: '2px',
+                    fontWeight: 'bold',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: '8px',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderTop: '1px solid rgba(255, 255, 255, 0.3)'
+                  }}>
+                    MCP_ROLL
+                  </td>
+                  {fingers.map(finger => {
+                    const rollKey = `${finger}_roll`
+                    const rollAngle = lastValidJoints?.[rollKey] || 0
+
+                    return (
+                      <td key={rollKey} style={{
+                        padding: '4px',
+                        textAlign: 'center',
+                        borderLeft: finger !== 'thumb' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+                        fontSize: '11px',
+                        color: '#ffe66d',
+                        fontWeight: 'bold'
+                      }}>
+                        {formatDeg(rollAngle)}°
+                      </td>
+                    )
+                  })}
+                </tr>
+
+                {/* MCP_YAW row - only thumb has yaw */}
+                <tr>
+                  <td style={{
+                    padding: '2px',
+                    fontWeight: 'bold',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: '8px',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.2)'
+                  }}>
+                    MCP_YAW
+                  </td>
+                  {fingers.map(finger => {
+                    const yawKey = `${finger}_yaw`
+                    const hasYaw = finger === 'thumb'
+                    const yawAngle = hasYaw ? (lastValidJoints?.[yawKey] || 0) : null
+
+                    return (
+                      <td key={yawKey} style={{
+                        padding: '4px',
+                        textAlign: 'center',
+                        borderLeft: finger !== 'thumb' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                        fontSize: '11px',
+                        color: hasYaw ? '#ff6b6b' : 'rgba(255, 255, 255, 0.3)',
+                        fontWeight: hasYaw ? 'bold' : 'normal'
+                      }}>
+                        {hasYaw ? `${formatDeg(yawAngle)}°` : 'N/A'}
+                      </td>
+                    )
+                  })}
+                </tr>
               </tbody>
             </table>
           </div>
@@ -251,17 +315,13 @@ export default function DebugPanel({
             }}>
               WRIST
             </div>
-            <div style={{ paddingLeft: '4px', lineHeight: '1.3', fontSize: '9px' }}>
+            <div style={{ paddingLeft: '4px', lineHeight: '1.3', fontSize: '11px' }}>
               {(() => {
-                const wristData = lastValidRotations?.wrist || { pitch: 0, yaw: 0, roll: 0 }
+                const wristAngle = lastValidJoints?.wrist || 0
                 return (
-                  <>
-                    <span style={{ color: '#ff6b6b' }}>P:{formatDeg(wristData.pitch)}</span>
-                    {' '}
-                    <span style={{ color: '#4ecdc4' }}>Y:{formatDeg(wristData.yaw)}</span>
-                    {' '}
-                    <span style={{ color: '#ffe66d' }}>R:{formatDeg(wristData.roll)}</span>
-                  </>
+                  <span style={{ color: '#4ecdc4', fontWeight: 'bold' }}>
+                    {formatDeg(wristAngle)}°
+                  </span>
                 )
               })()}
             </div>

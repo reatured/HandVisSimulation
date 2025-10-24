@@ -126,7 +126,8 @@ export default function Scene3D({
   controlMode = 'camera',
   ikDebugData = { left: null, right: null },
   showIKVisualization = true,
-  onManualLandmarkDrag = null
+  onManualLandmarkDrag = null,
+  cameraLandmarks = { left: null, right: null }
 }) {
   // Ref for OrbitControls to pass to gimbals
   const orbitControlsRef = useRef()
@@ -228,6 +229,7 @@ export default function Scene3D({
               onRobotLoaded={onLeftRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
+              cameraLandmarks={cameraLandmarks.left}
             />
           </GimbalControl>
         </group>
@@ -258,6 +260,7 @@ export default function Scene3D({
               onRobotLoaded={onRightRobotLoaded}
               useMultiDoF={useMultiDoF}
               showJointGimbals={showJointGimbals}
+              cameraLandmarks={cameraLandmarks.right}
             />
           </GimbalControl>
         </group>
