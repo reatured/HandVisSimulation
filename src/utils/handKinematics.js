@@ -302,6 +302,65 @@ function calculateFingerMcpRoll(landmarks, mcpIdx, tipIdx) {
 }
 
 /**
+ * Calculate finger MCP pitch angle
+ * Measures the flexion/extension angle at the MCP joint in 3D space
+ * Uses a finger-specific projection plane for accurate pitch measurement
+ * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
+ * @param {number} mcpIdx - MCP landmark index
+ * @param {number} pipIdx - PIP landmark index
+ * @returns {number} - Pitch angle in radians
+ */
+function calculateFingerMcpPitch(landmarks, mcpIdx, pipIdx) {
+  // Get key landmarks
+  const wrist = landmarks[LANDMARKS.WRIST]           // Point 0
+  const indexMcp = landmarks[LANDMARKS.INDEX_MCP]    // Point 5
+  const pinkyMcp = landmarks[LANDMARKS.PINKY_MCP]    // Point 17
+  const mcp = landmarks[mcpIdx]
+  const pip = landmarks[pipIdx]
+
+  // Vector A: Finger's base direction (MCP - WRIST)
+  const baseVector = new THREE.Vector3(
+    mcp.x - wrist.x,
+    mcp.y - wrist.y,
+    mcp.z - wrist.z
+  )
+
+  // Vector B: Hand width direction (PINKY_MCP(17) - INDEX_MCP(5))
+  const handWidthVector = new THREE.Vector3(
+    pinkyMcp.x - indexMcp.x,
+    pinkyMcp.y - indexMcp.y,
+    pinkyMcp.z - indexMcp.z
+  )
+
+  // Step 1: Calculate intermediate normal: A × B
+  // This gives a vector perpendicular to both finger base and hand width
+  const intermediateNormal = new THREE.Vector3().crossVectors(baseVector, handWidthVector).normalize()
+
+  // Step 2: Calculate actual projection plane normal: A × intermediateNormal
+  // This creates a plane that contains baseVector and is perpendicular to hand width
+  const projectionPlaneNormal = new THREE.Vector3().crossVectors(baseVector, intermediateNormal).normalize()
+
+  // Vector 1: Finger direction (PIP - MCP)
+  const fingerVector = new THREE.Vector3(
+    pip.x - mcp.x,
+    pip.y - mcp.y,
+    pip.z - mcp.z
+  )
+
+  // Project finger vector onto the finger-specific plane
+  // Projection formula: v_projected = v - (v · n)n
+  const fingerDot = fingerVector.dot(projectionPlaneNormal)
+  const projectedFinger = fingerVector.clone().sub(projectionPlaneNormal.clone().multiplyScalar(fingerDot))
+  projectedFinger.normalize()
+
+  // Normalize base vector for angle calculation
+  baseVector.normalize()
+
+  // Calculate angle between projected finger direction and base direction
+  return projectedFinger.angleTo(baseVector)
+}
+
+/**
  * Calculate wrist orientation from hand landmarks
  * Uses palm plane to determine hand rotation in 3D space
  * @param {Array} landmarks - MediaPipe hand landmarks (21 points)
@@ -437,12 +496,9 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   
 
   // INDEX FINGER
-  const indexMcpCurl = calculateFingerCurl(
-    landmarks,
-    LANDMARKS.WRIST,
-    LANDMARKS.INDEX_MCP,
-    LANDMARKS.INDEX_PIP
-  )
+  const indexMcpCurl = calculateFingerMcpPitch(
+    landmarks, LANDMARKS.INDEX_MCP, LANDMARKS.INDEX_PIP)
+
   const indexPipCurl = calculateFingerCurl(
     landmarks,
     LANDMARKS.INDEX_MCP,
@@ -464,12 +520,9 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
 
 
   // MIDDLE FINGER
-  const middleMcpCurl = calculateFingerCurl(
-    landmarks,
-    LANDMARKS.WRIST,
-    LANDMARKS.MIDDLE_MCP,
-    LANDMARKS.MIDDLE_PIP
-  )
+  const middleMcpCurl = calculateFingerMcpPitch(
+    landmarks, LANDMARKS.MIDDLE_MCP, LANDMARKS.MIDDLE_PIP)
+
   const middlePipCurl = calculateFingerCurl(
     landmarks,
     LANDMARKS.MIDDLE_MCP,
@@ -487,15 +540,12 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.middle_pip = middlePipCurl
   joints.middle_dip = middleDipCurl
   joints.middle_tip = middleDipCurl * 0.7
-  joints.middle_roll = calculateFingerMcpRoll(landmarks, LANDMARKS.MIDDLE_MCP, LANDMARKS.MIDDLE_TIP)
+  joints.middle_roll = 0.17-calculateFingerMcpRoll(landmarks, LANDMARKS.MIDDLE_MCP, LANDMARKS.MIDDLE_TIP)
 
   // RING FINGER
-  const ringMcpCurl = calculateFingerCurl(
-    landmarks,
-    LANDMARKS.WRIST,
-    LANDMARKS.RING_MCP,
-    LANDMARKS.RING_PIP
-  )
+  const ringMcpCurl = calculateFingerMcpPitch(
+    landmarks, LANDMARKS.RING_MCP, LANDMARKS.RING_PIP)
+
   const ringPipCurl = calculateFingerCurl(
     landmarks,
     LANDMARKS.RING_MCP,
@@ -516,12 +566,9 @@ export function landmarksToJointRotations(landmarks, handedness = 'Right') {
   joints.ring_roll = calculateFingerMcpRoll(landmarks, LANDMARKS.RING_MCP, LANDMARKS.RING_TIP)
 
   // PINKY FINGER
-  const pinkyMcpCurl = calculateFingerCurl(
-    landmarks,
-    LANDMARKS.WRIST,
-    LANDMARKS.PINKY_MCP,
-    LANDMARKS.PINKY_PIP
-  )
+  const pinkyMcpCurl = calculateFingerMcpPitch(
+    landmarks, LANDMARKS.PINKY_MCP, LANDMARKS.PINKY_PIP)
+
   const pinkyPipCurl = calculateFingerCurl(
     landmarks,
     LANDMARKS.PINKY_MCP,
